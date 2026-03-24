@@ -94,7 +94,7 @@ export function CookModeOverlay({ title, instructions, onClose }: CookModeOverla
       {/* Main Content */}
       <div className="flex-1 flex flex-col justify-center py-8">
         <div className="mb-4">
-          <span className="text-[40px] font-black text-primary/20 tracking-tighter">
+          <span className="text-[40px] font-black text-text-hi/20 tracking-tighter">
             {currentStep + 1}
             <span className="text-2xl text-stone-300">/{steps.length}</span>
           </span>
@@ -109,7 +109,7 @@ export function CookModeOverlay({ title, instructions, onClose }: CookModeOverla
         <button 
           onClick={handlePrev}
           disabled={currentStep === 0}
-          className="h-20 bg-stone-200 rounded-3xl flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none hover:bg-stone-300 active:scale-95 transition-all text-stone-600 touch-none"
+          className="h-20 bg-stone-200 rounded-md flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none hover:bg-stone-300 active:scale-95 transition-all text-stone-600 touch-none"
         >
           <ChevronLeft className="w-10 h-10" />
         </button>
@@ -117,14 +117,14 @@ export function CookModeOverlay({ title, instructions, onClose }: CookModeOverla
         {isDone ? (
           <button 
             onClick={onClose}
-            className="h-20 bg-success text-white rounded-3xl flex items-center justify-center hover:bg-green-600 active:scale-95 transition-all font-bold text-2xl shadow-xl shadow-green-500/20 touch-none"
+            className="h-20 bg-success text-white rounded-md flex items-center justify-center hover:bg-green-600 active:scale-95 transition-all font-bold text-2xl shadow-sm border border-border touch-none"
           >
             <Check className="w-8 h-8 mr-2" /> Done
           </button>
         ) : (
           <button 
             onClick={handleNext}
-            className="h-20 bg-primary text-white rounded-3xl flex items-center justify-center hover:bg-orange-500 active:scale-95 transition-all shadow-xl shadow-orange-500/20 touch-none"
+            className="h-20 bg-primary text-white border border-border hover:bg-stone-800 rounded-md flex items-center justify-center hover:bg-stone-500 active:scale-95 transition-all shadow-sm border border-border touch-none"
           >
             <ChevronRight className="w-10 h-10" />
           </button>

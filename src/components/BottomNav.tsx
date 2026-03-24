@@ -17,7 +17,7 @@ export function BottomNav() {
       
       {/* FAB (Add) */}
       <div className="relative -top-5">
-        <Link href="/recipes/new" className="flex items-center justify-center w-14 h-14 bg-primary text-white rounded-full shadow-lg ring-4 ring-background hover:bg-orange-500 transition-colors">
+        <Link href="/recipes/new" className="flex items-center justify-center w-14 h-14 bg-primary text-white border border-border hover:bg-stone-800 rounded-full shadow-lg ring-4 ring-background hover:bg-stone-500 transition-colors">
           <Plus className="w-8 h-8" />
           <span className="sr-only">Add Recipe</span>
         </Link>
@@ -31,7 +31,7 @@ export function BottomNav() {
 
 function NavItem({ href, icon, label, active }: { href: string; icon: React.ReactNode; label: string; active: boolean }) {
   return (
-    <Link href={href} className={`flex flex-col items-center justify-center w-16 h-full gap-1 ${active ? 'text-primary' : 'text-text-lo hover:text-text-hi'}`}>
+    <Link href={href} className={`flex flex-col items-center justify-center w-16 h-full gap-1 ${active ? 'text-text-hi' : 'text-text-lo hover:text-text-hi'}`}>
       {icon}
       <span className="text-[10px] font-medium">{label}</span>
     </Link>

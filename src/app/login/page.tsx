@@ -10,7 +10,7 @@ export default function LoginPage({
     <div className="min-h-dvh bg-background flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-          <ChefHat className="w-10 h-10 text-primary" />
+          <ChefHat className="w-10 h-10 text-text-hi" />
         </div>
         <h2 className="text-center text-3xl font-black text-text-hi tracking-tight">
           WhatsCookin
@@ -21,10 +21,10 @@ export default function LoginPage({
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-surface py-8 px-4 shadow-xl shadow-stone-200/50 sm:rounded-2xl sm:px-10 border border-border">
+        <div className="bg-surface py-8 px-4 shadow-sm border border-border sm:rounded-md sm:px-10 border border-border">
           
           {searchParams.error && (
-            <div className="mb-6 bg-red-50 text-danger p-4 rounded-xl text-sm font-medium flex items-center gap-2 border border-red-100">
+            <div className="mb-6 bg-red-50 text-danger p-4 rounded-md text-sm font-medium flex items-center gap-2 border border-red-100">
               <AlertTriangle className="w-5 h-5 shrink-0" />
               {searchParams.error}
             </div>
@@ -38,7 +38,7 @@ export default function LoginPage({
                 name="name"
                 type="text"
                 placeholder="Chef Gordon"
-                className="w-full p-4 border border-border rounded-xl bg-background focus:ring-2 focus:ring-primary/50 outline-none font-medium"
+                className="w-full p-4 border border-border rounded-md bg-background focus:ring-2 focus:ring-stone-300 outline-none font-medium"
               />
             </div>
 
@@ -50,7 +50,7 @@ export default function LoginPage({
                 type="email"
                 required
                 placeholder="chef@example.com"
-                className="w-full p-4 border border-border rounded-xl bg-background focus:ring-2 focus:ring-primary/50 outline-none font-medium"
+                className="w-full p-4 border border-border rounded-md bg-background focus:ring-2 focus:ring-stone-300 outline-none font-medium"
               />
             </div>
 
@@ -61,20 +61,20 @@ export default function LoginPage({
                 name="password"
                 type="password"
                 required
-                className="w-full p-4 border border-border rounded-xl bg-background focus:ring-2 focus:ring-primary/50 outline-none font-medium"
+                className="w-full p-4 border border-border rounded-md bg-background focus:ring-2 focus:ring-stone-300 outline-none font-medium"
               />
             </div>
 
             <div className="flex gap-4 pt-4">
               <button
                 formAction={login}
-                className="w-full flex-1 bg-stone-200 text-text-hi font-bold py-4 rounded-xl hover:bg-stone-300 transition-all"
+                className="w-full flex-1 bg-stone-200 text-text-hi font-bold py-4 rounded-md hover:bg-stone-300 transition-all"
               >
                 Log In
               </button>
               <button
                 formAction={signup}
-                className="w-full flex-1 bg-primary text-white font-bold py-4 rounded-xl shadow-[0_4px_0_0_rgb(194,65,12)] hover:bg-orange-500 hover:translate-y-[2px] border-b-4 border-transparent hover:shadow-[0_2px_0_0_rgb(194,65,12)] transition-all"
+                className="w-full flex-1 bg-primary text-white border border-border hover:bg-stone-800 font-bold py-4 rounded-md shadow-sm border border-border hover:bg-stone-500   hover:shadow-sm border border-border transition-all"
               >
                 Sign Up
               </button>

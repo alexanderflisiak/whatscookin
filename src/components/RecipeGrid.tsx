@@ -51,13 +51,13 @@ export function RecipeGrid() {
     // Empty State / Onboarding View
     return (
       <div className="flex flex-col items-center justify-center p-6 mt-12 text-center">
-        <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mb-6">
-          <Search className="w-10 h-10 text-primary" />
+        <div className="w-20 h-20 bg-stone-50 rounded-full flex items-center justify-center mb-6">
+          <Search className="w-10 h-10 text-text-hi" />
         </div>
         <h2 className="text-2xl font-bold text-text-hi mb-2">Your kitchen, your rules.</h2>
         <p className="text-text-lo mb-8 max-w-sm">Add your first recipe — paste a link or type it in.</p>
         
-        <Link href="/recipes/new" className="bg-primary text-white font-bold py-4 px-8 rounded-xl shadow-[0_4px_0_0_rgb(194,65,12)] hover:bg-orange-500 hover:translate-y-[2px] hover:shadow-[0_2px_0_0_rgb(194,65,12)] transition-all flex items-center gap-2">
+        <Link href="/recipes/new" className="bg-primary text-white border border-border hover:bg-stone-800 font-bold py-4 px-8 rounded-md shadow-sm border border-border hover:bg-stone-500  hover:shadow-sm border border-border transition-all flex items-center gap-2">
           <Plus className="w-5 h-5" /> Add Recipe
         </Link>
         <p className="mt-8 text-sm text-text-lo font-medium flex items-center gap-2">
@@ -78,12 +78,12 @@ export function RecipeGrid() {
               placeholder="Search recipes..." 
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-white border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow text-text-hi placeholder:text-text-lo"
+              className="w-full pl-10 pr-4 py-3 bg-white border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-stone-300 transition-shadow text-text-hi placeholder:text-text-lo"
             />
           </div>
           <button 
             onClick={() => setRandomizerOpen(true)}
-            className="shrink-0 w-12 h-12 bg-white border border-border rounded-xl flex items-center justify-center text-primary hover:bg-orange-50 transition-colors shadow-sm"
+            className="shrink-0 w-12 h-12 bg-white border border-border rounded-md flex items-center justify-center text-text-hi hover:bg-stone-50 transition-colors shadow-sm"
           >
             <Dices className="w-6 h-6" />
           </button>

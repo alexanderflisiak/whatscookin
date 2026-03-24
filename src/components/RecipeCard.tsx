@@ -15,7 +15,7 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
 
   return (
     <Link href={`/recipes/${recipe.id}`} className="block group">
-      <div className="bg-surface rounded-xl overflow-hidden shadow-sm border border-border group-hover:border-primary/50 transition-colors">
+      <div className="bg-surface rounded-md overflow-hidden shadow-sm border border-border group-hover:border-primary/50 transition-colors">
         <div className="aspect-[4/3] bg-stone-100 flex items-center justify-center relative">
           {imageUrl ? (
             <Image 

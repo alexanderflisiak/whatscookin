@@ -147,7 +147,7 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
       <h1 className="text-2xl font-bold mb-6">{mode === 'create' ? 'Add Recipe' : 'Edit Recipe'}</h1>
 
       {mode === 'create' && (
-        <div className="bg-surface p-4 rounded-xl border border-border mb-8 shadow-sm">
+        <div className="bg-surface p-4 rounded-md border border-border mb-8 shadow-sm">
           <label className="block text-sm font-semibold mb-2">Scrape from URL</label>
           <div className="flex gap-2">
             <div className="relative flex-1">
@@ -157,7 +157,7 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
                 placeholder="https://tasty.co/..." 
                 value={scrapeUrl}
                 onChange={e => setScrapeUrl(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 border border-border rounded-lg bg-background focus:ring-2 focus:ring-primary/50 outline-none"
+                className="w-full pl-9 pr-4 py-2 border border-border rounded-lg bg-background focus:ring-2 focus:ring-stone-300 outline-none"
               />
             </div>
             <button 
@@ -180,7 +180,7 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
           <label className="block text-sm font-semibold mb-1">Title</label>
           <input 
             {...register('title', { required: true })}
-            className="w-full p-3 border border-border rounded-lg bg-surface focus:ring-2 focus:ring-primary/50 outline-none font-medium"
+            className="w-full p-3 border border-border rounded-lg bg-surface focus:ring-2 focus:ring-stone-300 outline-none font-medium"
             placeholder="e.g. Garlic Butter Chicken"
           />
         </div>
@@ -189,7 +189,7 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
           <label className="block text-sm font-semibold mb-1">Source URL (optional)</label>
           <input 
             {...register('source_url')}
-            className="w-full p-2 border border-border rounded-lg bg-surface focus:ring-2 focus:ring-primary/50 outline-none text-sm"
+            className="w-full p-2 border border-border rounded-lg bg-surface focus:ring-2 focus:ring-stone-300 outline-none text-sm"
           />
         </div>
 
@@ -199,7 +199,7 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
             <button 
               type="button" 
               onClick={() => append({ amount: '', unit: '', name: '' })}
-              className="text-primary text-sm flex items-center gap-1 font-medium bg-orange-50 px-2 py-1 rounded"
+              className="text-text-hi text-sm flex items-center gap-1 font-medium bg-stone-50 px-2 py-1 rounded"
             >
               <Plus className="w-4 h-4" /> Add Row
             </button>
@@ -211,17 +211,17 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
                 <input 
                   {...register(`ingredients.${index}.amount`)}
                   placeholder="2"
-                  className="w-16 p-2 border border-border rounded-lg bg-surface text-center outline-none focus:border-primary shrink-0"
+                  className="w-16 p-2 border border-border rounded-lg bg-surface text-center outline-none focus:border-stone-400 shrink-0"
                 />
                 <input 
                   {...register(`ingredients.${index}.unit`)}
                   placeholder="cups"
-                  className="w-20 p-2 border border-border rounded-lg bg-surface outline-none focus:border-primary shrink-0"
+                  className="w-20 p-2 border border-border rounded-lg bg-surface outline-none focus:border-stone-400 shrink-0"
                 />
                 <input 
                   {...register(`ingredients.${index}.name`, { required: true })}
                   placeholder="flour"
-                  className="flex-1 p-2 border border-border rounded-lg bg-surface outline-none focus:border-primary"
+                  className="flex-1 p-2 border border-border rounded-lg bg-surface outline-none focus:border-stone-400"
                 />
                 <button 
                   type="button" 
@@ -240,7 +240,7 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
           <textarea 
             {...register('instructions')}
             rows={10}
-            className="w-full p-3 border border-border rounded-lg bg-surface focus:ring-2 focus:ring-primary/50 outline-none leading-relaxed"
+            className="w-full p-3 border border-border rounded-lg bg-surface focus:ring-2 focus:ring-stone-300 outline-none leading-relaxed"
             placeholder="1. Preheat the oven...&#10;2. Mix the dry ingredients..."
           />
         </div>
@@ -248,7 +248,7 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
         <button 
           type="submit" 
           disabled={isSaving}
-          className="w-full bg-primary text-white font-bold py-4 rounded-xl shadow-[0_4px_0_0_rgb(194,65,12)] hover:bg-orange-500 hover:translate-y-[2px] border-b-4 border-transparent hover:shadow-[0_2px_0_0_rgb(194,65,12)] transition-all flex items-center justify-center gap-2"
+          className="w-full bg-primary text-white border border-border hover:bg-stone-800 font-bold py-4 rounded-md shadow-sm border border-border hover:bg-stone-500   hover:shadow-sm border border-border transition-all flex items-center justify-center gap-2"
         >
           {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
           {mode === 'create' ? 'Save Recipe' : 'Update Recipe'}

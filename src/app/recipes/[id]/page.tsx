@@ -88,7 +88,7 @@ export default function RecipeDetailPage() {
     <div className="p-8 text-center flex flex-col items-center">
       <AlertTriangle className="w-12 h-12 text-danger mb-4 opacity-50" />
       <p className="text-text-lo font-medium">{errorMsg}</p>
-      <button onClick={() => router.push('/')} className="mt-4 text-primary font-medium hover:underline">Go back Home</button>
+      <button onClick={() => router.push('/')} className="mt-4 text-text-hi font-medium hover:underline">Go back Home</button>
     </div>
   )
 
@@ -121,7 +121,7 @@ export default function RecipeDetailPage() {
             <div className="flex flex-col">
               <span className="text-xs font-bold text-text-lo tracking-wider uppercase mb-1">Cook Time</span>
               <div className="flex items-center gap-1.5 font-semibold text-text-hi">
-                <Clock className="w-4 h-4 text-primary" />
+                <Clock className="w-4 h-4 text-text-hi" />
                 {recipe.cook_time ? `${recipe.cook_time}m` : '--'}
               </div>
             </div>
@@ -144,14 +144,14 @@ export default function RecipeDetailPage() {
 
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-8">
-            {tags.map(t => <span key={t.id} className="px-3 py-1 bg-orange-50 text-orange-700 text-xs font-bold uppercase tracking-wide rounded-md">{t.name}</span>)}
+            {tags.map(t => <span key={t.id} className="px-3 py-1 bg-stone-50 text-text-hi text-xs font-bold uppercase tracking-wide rounded-md">{t.name}</span>)}
           </div>
         )}
 
         <div className="mb-10">
           <div className="flex flex-col gap-2 mb-5">
             <h2 className="text-xl font-bold">Ingredients</h2>
-            <button onClick={syncToShoppingList} className="self-start text-xs font-bold uppercase tracking-wider text-primary hover:text-orange-700 hover:underline transition-colors">
+            <button onClick={syncToShoppingList} className="self-start text-xs font-bold uppercase tracking-wider text-text-hi hover:text-text-hi hover:underline transition-colors">
               Sync Missing to List
             </button>
           </div>
@@ -159,9 +159,9 @@ export default function RecipeDetailPage() {
             {ingredients.map((ing) => {
               const isChecked = checkedItems.has(ing.ingredient_id)
               return (
-                <button key={ing.ingredient_id} onClick={() => toggleCheck(ing.ingredient_id)} className="w-full flex items-center gap-4 py-3 min-h-[48px] px-2 -mx-2 hover:bg-stone-100 rounded-xl transition-colors group text-left">
+                <button key={ing.ingredient_id} onClick={() => toggleCheck(ing.ingredient_id)} className="w-full flex items-center gap-4 py-3 min-h-[48px] px-2 -mx-2 hover:bg-stone-100 rounded-md transition-colors group text-left">
                   <div className="shrink-0">
-                    {isChecked ? <CheckCircle2 className="w-6 h-6 text-success fill-success/20 stroke-[1.5]" /> : <Circle className="w-6 h-6 text-stone-300 group-hover:text-primary stroke-[1.5] transition-colors" />}
+                    {isChecked ? <CheckCircle2 className="w-6 h-6 text-success fill-success/20 stroke-[1.5]" /> : <Circle className="w-6 h-6 text-stone-300 group-hover:text-text-hi stroke-[1.5] transition-colors" />}
                   </div>
                   <div className={`flex-1 transition-all ${isChecked ? 'opacity-40 italic' : ''}`}>
                     <span className="font-semibold w-16 inline-block shrink-0">{[ing.amount, ing.unit].filter(Boolean).join(' ')}</span>
@@ -187,7 +187,7 @@ export default function RecipeDetailPage() {
       </div>
 
       <div className="fixed bottom-20 left-4 right-4 z-30">
-        <button onClick={() => setIsCookMode(true)} className="w-full h-14 bg-primary text-white font-bold text-lg rounded-2xl shadow-xl shadow-orange-600/20 hover:bg-orange-500 active:scale-[0.98] transition-all flex items-center justify-center gap-2 border-b-4 border-transparent hover:shadow-[0_2px_0_0_rgb(194,65,12)]">
+        <button onClick={() => setIsCookMode(true)} className="w-full h-14 bg-primary text-white border border-border hover:bg-stone-800 font-bold text-lg rounded-md shadow-sm border border-border hover:bg-stone-500 active:scale-[0.98] transition-all flex items-center justify-center gap-2  hover:shadow-sm border border-border">
           <ChefHat className="w-6 h-6" /> Start Cook Mode
         </button>
       </div>

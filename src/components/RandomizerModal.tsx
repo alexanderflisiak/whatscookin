@@ -68,11 +68,11 @@ export function RandomizerModal({ isOpen, onClose }: RandomizerModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-surface w-full max-w-sm rounded-2xl shadow-xl overflow-hidden" onClick={e => e.stopPropagation()}>
+      <div className="bg-surface w-full max-w-sm rounded-md shadow-xl overflow-hidden" onClick={e => e.stopPropagation()}>
         
         <div className="p-6">
           <h2 className="text-xl font-bold flex items-center gap-2 mb-4">
-            <Dices className="text-primary w-6 h-6" />
+            <Dices className="text-text-hi w-6 h-6" />
             Surprise Me
           </h2>
 
@@ -82,7 +82,7 @@ export function RandomizerModal({ isOpen, onClose }: RandomizerModalProps) {
                 key={t}
                 onClick={() => setMealType(t)}
                 className={`px-3 py-1.5 text-sm rounded-full font-medium transition-colors ${
-                  mealType === t ? 'bg-primary text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                  mealType === t ? 'bg-primary text-white border border-border hover:bg-stone-800' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
                 }`}
               >
                 {t}
@@ -93,7 +93,7 @@ export function RandomizerModal({ isOpen, onClose }: RandomizerModalProps) {
           {!recipe && !loading && (
             <button
               onClick={handleRoll}
-              className="w-full bg-primary text-white font-bold py-4 rounded-xl shadow-[0_4px_0_0_rgb(194,65,12)] hover:bg-orange-500 hover:translate-y-[2px] hover:shadow-[0_2px_0_0_rgb(194,65,12)] transition-all flex items-center justify-center gap-2"
+              className="w-full bg-primary text-white border border-border hover:bg-stone-800 font-bold py-4 rounded-md shadow-sm border border-border hover:bg-stone-500  hover:shadow-sm border border-border transition-all flex items-center justify-center gap-2"
             >
               <Dices className="w-5 h-5" /> Roll the Dice
             </button>
@@ -101,7 +101,7 @@ export function RandomizerModal({ isOpen, onClose }: RandomizerModalProps) {
 
           {loading && (
             <div className="py-12 flex justify-center">
-              <RefreshCw className="w-8 h-8 text-primary animate-spin" />
+              <RefreshCw className="w-8 h-8 text-text-hi animate-spin" />
             </div>
           )}
 
@@ -115,13 +115,13 @@ export function RandomizerModal({ isOpen, onClose }: RandomizerModalProps) {
               <div className="flex gap-3 mt-4">
                 <button
                   onClick={handleRoll}
-                  className="flex-1 bg-stone-100 text-stone-700 font-semibold py-3 rounded-xl hover:bg-stone-200 transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 bg-stone-100 text-stone-700 font-semibold py-3 rounded-md hover:bg-stone-200 transition-colors flex items-center justify-center gap-2"
                 >
                   <RefreshCw className="w-4 h-4" /> Re-roll
                 </button>
                 <a
                   href={`/recipes/${recipe.id}`}
-                  className="flex-1 bg-primary text-white font-semibold py-3 rounded-xl hover:bg-orange-500 transition-colors text-center"
+                  className="flex-1 bg-primary text-white border border-border hover:bg-stone-800 font-semibold py-3 rounded-md hover:bg-stone-500 transition-colors text-center"
                 >
                   Start Cooking
                 </a>
