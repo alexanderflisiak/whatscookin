@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useMemo } from 'react'
 import { X, ChevronLeft, ChevronRight, Check } from 'lucide-react'
 
 type CookModeOverlayProps = {
@@ -10,23 +10,25 @@ type CookModeOverlayProps = {
 }
 
 export function CookModeOverlay({ title, instructions, onClose }: CookModeOverlayProps) {
-  const [steps, setSteps] = useState<string[]>([])
-  const [currentStep, setCurrentStep] = useState(0)
-  const [isPressingExit, setIsPressingExit] = useState(false)
-  const exitTimerRef = useRef<NodeJS.Timeout | null>(null)
-  const wakeLockRef = useRef<any>(null)
-
-  useEffect(() => {
-    // Basic Markdown split: newlines starting with numbers or bullets
-    const parsedSteps = instructions
+  const steps = useMemo(() => {
+    const parsed = instructions
       .split(/\n+/)
       .map(s => s.trim())
       .filter(s => s.length > 0)
-      // Optional: remove numbers like "1. " from the start since the UI naturally shows step numbers
       .map(s => s.replace(/^(?:\d+\.|\*|\-)\s*/, ''))
     
-    setSteps(parsedSteps.length ? parsedSteps : [instructions])
+    return parsed.length ? parsed : [instructions]
+  }, [instructions])
 
+  const [currentStep, setCurrentStep] = useState(0)
+  const wakeLockRef = useRef<any>(null)
+
+  // Reset steps if instructions change
+  useEffect(() => {
+    setCurrentStep(0)
+  }, [instructions])
+
+  useEffect(() => {
     // Request Wake Lock
     async function requestWakeLock() {
       try {
@@ -44,20 +46,7 @@ export function CookModeOverlay({ title, instructions, onClose }: CookModeOverla
         wakeLockRef.current.release().catch(console.error)
       }
     }
-  }, [instructions])
-
-  function handlePointerDown() {
-    setIsPressingExit(true)
-    exitTimerRef.current = setTimeout(() => {
-      onClose()
-    }, 1500) // 1.5 second long-press to exit
-  }
-
-  function handlePointerUp() {
-    setIsPressingExit(false)
-    if (exitTimerRef.current) clearTimeout(exitTimerRef.current)
-  }
-
+  }, [])
   function handleNext() {
     if (currentStep < steps.length - 1) setCurrentStep(c => c + 1)
   }
@@ -76,18 +65,11 @@ export function CookModeOverlay({ title, instructions, onClose }: CookModeOverla
       <div className="flex items-center justify-between py-4 border-b border-border/50">
         <h2 className="text-xl font-bold line-clamp-1 flex-1 pr-4">{title}</h2>
         <button 
-          onPointerDown={handlePointerDown}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
-          className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold transition-all relative overflow-hidden select-none touch-none ${
-            isPressingExit ? 'bg-danger text-white scale-95' : 'bg-stone-200 text-stone-600'
-          }`}
+          onClick={onClose}
+          className="flex items-center gap-2 px-4 py-2 bg-stone-100 text-stone-600 rounded-full font-bold hover:bg-stone-200 active:scale-95 transition-all select-none touch-none"
         >
           <X className="w-5 h-5" />
           <span className="text-sm">Exit</span>
-          {isPressingExit && (
-            <div className="absolute inset-0 bg-white/20 origin-left animate-[progress_1.5s_linear]" />
-          )}
         </button>
       </div>
 
