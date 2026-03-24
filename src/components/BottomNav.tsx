@@ -13,7 +13,7 @@ export function BottomNav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 h-16 bg-surface border-t border-border flex items-center justify-around px-2 z-40 safe-area-pb">
       <NavItem href="/" icon={<Home className="w-6 h-6" />} label="Home" active={pathname === '/'} />
-      <NavItem href="/search" icon={<Search className="w-6 h-6" />} label="Search" active={pathname === '/search'} />
+      <NavItem href="/" icon={<Search className="w-6 h-6" />} label="Search" active={pathname === '/'} />
       
       {/* FAB (Add) */}
       <div className="relative -top-5">
