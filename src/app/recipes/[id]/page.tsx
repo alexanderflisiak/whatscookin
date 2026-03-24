@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Clock, ChefHat, CheckCircle2, Circle, Pencil, AlertTriangle, ArrowLeft } from 'lucide-react'
 import { CookModeOverlay } from '@/components/CookModeOverlay'
+import { InstructionParser } from '@/components/InstructionParser'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { Recipe, RecipeIngredient, Tag } from '@/lib/types'
@@ -179,7 +180,9 @@ export default function RecipeDetailPage() {
             {parsedInstructions.map((step, idx) => (
               <div key={idx} className="flex gap-4">
                 <div className="w-6 h-6 rounded-full bg-stone-100 text-text-lo text-sm font-bold flex items-center justify-center shrink-0 mt-0.5">{idx + 1}</div>
-                <p className="text-text-hi leading-relaxed">{step.replace(/^(?:\d+\.|\*|\-)\s*/, '')}</p>
+                <div className="text-text-hi leading-relaxed font-medium">
+                  <InstructionParser text={step.replace(/^(?:\d+\.|\*|\-)\s*/, '')} />
+                </div>
               </div>
             ))}
           </div>

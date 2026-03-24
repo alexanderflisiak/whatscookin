@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { BottomNav } from '@/components/BottomNav'
+import { TimerProvider } from '@/lib/TimerContext'
+import { TimerTray } from '@/components/TimerTray'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -31,10 +33,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}>
       <body className="min-h-full flex flex-col bg-background text-text-hi pb-safe">
-        <main className="flex-1 pb-16">
-          {children}
-        </main>
-        <BottomNav />
+        <TimerProvider>
+          <main className="flex-1 pb-16">
+            {children}
+          </main>
+          <TimerTray />
+          <BottomNav />
+        </TimerProvider>
       </body>
     </html>
   )

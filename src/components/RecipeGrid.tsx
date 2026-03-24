@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { RecipeCard } from './RecipeCard'
 import { RandomizerModal } from './RandomizerModal'
-import { Search, Dices, Plus } from 'lucide-react'
+import { Search, Dices, Plus, Coffee } from 'lucide-react'
 import Fuse from 'fuse.js'
 import type { Recipe } from '@/lib/types'
 import Link from 'next/link'
@@ -13,6 +13,7 @@ export function RecipeGrid() {
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [search, setSearch] = useState('')
   const [isRandomizerOpen, setRandomizerOpen] = useState(false)
+  const [isLazyFilter, setIsLazyFilter] = useState(false)
   
   const supabase = createClient()
 
@@ -20,7 +21,7 @@ export function RecipeGrid() {
     async function fetchRecipes() {
       const { data } = await supabase
         .from('recipes')
-        .select('*, author:profiles(*)')
+        .select('*, author:profiles(*), recipe_tags(tags(*))')
         .order('created_at', { ascending: false })
       
       if (data) setRecipes(data as Recipe[])
@@ -43,9 +44,21 @@ export function RecipeGrid() {
   const fuse = useMemo(() => new Fuse(recipes, { keys: ['title', 'author.display_name'] }), [recipes])
   
   const filteredRecipes = useMemo(() => {
-    if (!search) return recipes
-    return fuse.search(search).map(r => r.item)
-  }, [search, recipes, fuse])
+    let result = recipes
+    if (search) {
+      result = fuse.search(search).map(r => r.item)
+    }
+    if (isLazyFilter) {
+      result = result.filter(r => {
+        const isFast = r.cook_time != null && r.cook_time <= 20
+        const hasLazyTag = (r as any).recipe_tags?.some((rt: any) => 
+          rt.tags && ['quick', '15-min', 'easy'].includes(rt.tags.name.toLowerCase())
+        )
+        return isFast || hasLazyTag
+      })
+    }
+    return result
+  }, [search, recipes, fuse, isLazyFilter])
 
   if (recipes.length === 0) {
     const hasKeys = !!process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -96,9 +109,19 @@ export function RecipeGrid() {
           </div>
           <button 
             onClick={() => setRandomizerOpen(true)}
+            title="Surprise Me"
             className="shrink-0 w-12 h-12 bg-white border border-border rounded-md flex items-center justify-center text-text-hi hover:bg-stone-50 transition-colors shadow-sm"
           >
             <Dices className="w-6 h-6" />
+          </button>
+          <button 
+            onClick={() => setIsLazyFilter(!isLazyFilter)}
+            title="I'm Lazy Mode"
+            className={`shrink-0 w-12 h-12 border border-border rounded-md flex items-center justify-center transition-colors shadow-sm ${
+              isLazyFilter ? 'bg-orange-100 text-orange-800 border-orange-200 shadow-inner' : 'bg-white text-text-hi hover:bg-stone-50'
+            }`}
+          >
+            <Coffee className="w-6 h-6" />
           </button>
         </div>
         
