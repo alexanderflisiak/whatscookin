@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useDeferredValue } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { RecipeCard } from './RecipeCard'
 import { RandomizerModal } from './RandomizerModal'
@@ -14,6 +14,8 @@ export function RecipeGrid() {
   const [search, setSearch] = useState('')
   const [isRandomizerOpen, setRandomizerOpen] = useState(false)
   const [isLazyFilter, setIsLazyFilter] = useState(false)
+  // ⚡ Bolt: Defer search input to prevent expensive fuzzy search from blocking the main thread during typing
+  const deferredSearch = useDeferredValue(search)
   
   const supabase = createClient()
 
@@ -45,8 +47,8 @@ export function RecipeGrid() {
   
   const filteredRecipes = useMemo(() => {
     let result = recipes
-    if (search) {
-      result = fuse.search(search).map(r => r.item)
+    if (deferredSearch) {
+      result = fuse.search(deferredSearch).map(r => r.item)
     }
     if (isLazyFilter) {
       result = result.filter(r => {
@@ -58,7 +60,7 @@ export function RecipeGrid() {
       })
     }
     return result
-  }, [search, recipes, fuse, isLazyFilter])
+  }, [deferredSearch, recipes, fuse, isLazyFilter])
 
   if (recipes.length === 0) {
     const hasKeys = !!process.env.NEXT_PUBLIC_SUPABASE_URL
