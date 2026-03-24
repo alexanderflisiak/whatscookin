@@ -1,4 +1,4 @@
-import { login, signup } from './actions'
+import { login } from './actions'
 import { ChefHat, AlertTriangle } from 'lucide-react'
 
 export default async function LoginPage({
@@ -22,7 +22,7 @@ export default async function LoginPage({
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-surface py-8 px-4 shadow-sm border border-border sm:rounded-md sm:px-10 border border-border">
+        <div className="bg-surface py-8 px-4 shadow-sm border border-border sm:rounded-md sm:px-10">
           
           {error && (
             <div className="mb-6 bg-red-50 text-danger p-4 rounded-md text-sm font-medium flex items-center gap-2 border border-red-100">
@@ -32,17 +32,6 @@ export default async function LoginPage({
           )}
 
           <form className="space-y-6">
-            <div>
-              <label className="block text-sm font-bold text-text-hi mb-2">Display Name (Sign up only)</label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                placeholder="Chef Gordon"
-                className="w-full p-4 border border-border rounded-md bg-background focus:ring-2 focus:ring-stone-300 outline-none font-medium"
-              />
-            </div>
-
             <div>
               <label className="block text-sm font-bold text-text-hi mb-2">Email address</label>
               <input
@@ -66,25 +55,19 @@ export default async function LoginPage({
               />
             </div>
 
-            <div className="flex gap-4 pt-4">
+            <div className="pt-4">
               <button
                 formAction={login}
-                className="w-full flex-1 bg-stone-200 text-text-hi font-bold py-4 rounded-md hover:bg-stone-300 transition-all"
+                className="w-full bg-primary text-white font-bold py-4 rounded-md hover:bg-stone-800 transition-all shadow-sm"
               >
                 Log In
-              </button>
-              <button
-                formAction={signup}
-                className="w-full flex-1 bg-primary text-white border border-border hover:bg-stone-800 font-bold py-4 rounded-md shadow-sm border border-border hover:bg-stone-500   hover:shadow-sm border border-border transition-all"
-              >
-                Sign Up
               </button>
             </div>
           </form>
         </div>
         
         <p className="mt-8 text-center text-xs text-text-lo">
-          By signing up, you agree to cook delicious meals.
+          Invite-only kitchen. No new sign-ups.
         </p>
       </div>
     </div>
