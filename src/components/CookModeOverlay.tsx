@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef, useMemo } from 'react'
+import { useEffect, useState, useRef, useMemo, useLayoutEffect } from 'react'
 import { X, ChevronLeft, ChevronRight, Check } from 'lucide-react'
 
 type CookModeOverlayProps = {
@@ -21,12 +21,31 @@ export function CookModeOverlay({ title, instructions, onClose }: CookModeOverla
   }, [instructions])
 
   const [currentStep, setCurrentStep] = useState(0)
-  const wakeLockRef = useRef<any>(null)
+  const [fontSize, setFontSize] = useState(36)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const textRef = useRef<HTMLParagraphElement>(null)
+  const wakeLockRef = useRef<any>(null) // We keep any for wakeLock for now due to experimental API types
 
-  // Reset steps if instructions change
+  // Reset steps & font if instructions change, or just font if step changes
   useEffect(() => {
     setCurrentStep(0)
+    setFontSize(36)
   }, [instructions])
+
+  useEffect(() => {
+    setFontSize(36)
+  }, [currentStep])
+
+  // Sync measurement to fitting the text
+  useLayoutEffect(() => {
+    const container = containerRef.current
+    const text = textRef.current
+    if (!container || !text) return
+
+    if (text.scrollHeight > container.clientHeight && fontSize > 16) {
+      setFontSize(f => f - 2)
+    }
+  }, [fontSize, currentStep, steps])
 
   useEffect(() => {
     // Request Wake Lock
@@ -47,6 +66,7 @@ export function CookModeOverlay({ title, instructions, onClose }: CookModeOverla
       }
     }
   }, [])
+
   function handleNext() {
     if (currentStep < steps.length - 1) setCurrentStep(c => c + 1)
   }
@@ -60,9 +80,9 @@ export function CookModeOverlay({ title, instructions, onClose }: CookModeOverla
   const isDone = currentStep === steps.length - 1
 
   return (
-    <div className="fixed inset-0 z-[100] bg-background flex flex-col pt-safe px-4 pb-safe animate-in slide-in-from-bottom flex-1">
+    <div className="fixed inset-0 z-100 bg-background flex flex-col pt-safe px-4 pb-safe animate-in slide-in-from-bottom flex-1 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between py-4 border-b border-border/50">
+      <div className="flex items-center justify-between py-4 border-b border-border/50 shrink-0">
         <h2 className="text-xl font-bold line-clamp-1 flex-1 pr-4">{title}</h2>
         <button 
           onClick={onClose}
@@ -73,21 +93,27 @@ export function CookModeOverlay({ title, instructions, onClose }: CookModeOverla
         </button>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col justify-center py-8">
-        <div className="mb-4">
+      {/* Main Content Area (Limited) */}
+      <div ref={containerRef} className="flex-1 flex flex-col justify-center py-4 overflow-hidden relative">
+        <div className="mb-2 shrink-0">
           <span className="text-[40px] font-black text-text-hi/20 tracking-tighter">
             {currentStep + 1}
             <span className="text-2xl text-stone-300">/{steps.length}</span>
           </span>
         </div>
-        <p className="text-[28px] md:text-[36px] font-medium leading-relaxed max-w-2xl">
-          {steps[currentStep]}
-        </p>
+        <div className="flex-1 flex items-center overflow-hidden">
+          <p 
+            ref={textRef}
+            className="font-medium leading-tight max-w-2xl w-full"
+            style={{ fontSize: `${fontSize}px` }}
+          >
+            {steps[currentStep]}
+          </p>
+        </div>
       </div>
 
       {/* Navigation */}
-      <div className="grid grid-cols-2 gap-4 pb-6 mt-auto">
+      <div className="grid grid-cols-2 gap-4 pb-6 mt-auto shrink-0">
         <button 
           onClick={handlePrev}
           disabled={currentStep === 0}
@@ -106,7 +132,7 @@ export function CookModeOverlay({ title, instructions, onClose }: CookModeOverla
         ) : (
           <button 
             onClick={handleNext}
-            className="h-20 bg-primary text-white border border-border hover:bg-stone-800 rounded-md flex items-center justify-center hover:bg-stone-500 active:scale-95 transition-all shadow-sm border border-border touch-none"
+            className="h-20 bg-primary text-white border border-border hover:bg-stone-800 rounded-md flex items-center justify-center active:scale-95 transition-all shadow-sm touch-none"
           >
             <ChevronRight className="w-10 h-10" />
           </button>
