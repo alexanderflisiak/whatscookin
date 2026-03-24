@@ -1,11 +1,12 @@
 import { login, signup } from './actions'
 import { ChefHat, AlertTriangle } from 'lucide-react'
 
-export default function LoginPage({
+export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: { error?: string }
+  searchParams: Promise<{ error?: string }>
 }) {
+  const { error } = await searchParams
   return (
     <div className="min-h-dvh bg-background flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
@@ -23,10 +24,10 @@ export default function LoginPage({
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-surface py-8 px-4 shadow-sm border border-border sm:rounded-md sm:px-10 border border-border">
           
-          {searchParams.error && (
+          {error && (
             <div className="mb-6 bg-red-50 text-danger p-4 rounded-md text-sm font-medium flex items-center gap-2 border border-red-100">
               <AlertTriangle className="w-5 h-5 shrink-0" />
-              {searchParams.error}
+              {error}
             </div>
           )}
 
