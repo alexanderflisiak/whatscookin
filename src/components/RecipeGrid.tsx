@@ -48,6 +48,19 @@ export function RecipeGrid() {
   }, [search, recipes, fuse])
 
   if (recipes.length === 0) {
+    const hasKeys = !!process.env.NEXT_PUBLIC_SUPABASE_URL
+    if (!hasKeys) {
+      return (
+        <div className="flex flex-col items-center justify-center p-6 mt-12 text-center">
+          <div className="w-20 h-20 bg-stone-50 rounded-full flex items-center justify-center mb-6">
+             <Search className="w-10 h-10 text-text-hi" />
+          </div>
+          <h2 className="text-2xl font-bold text-text-hi mb-2">Supabase Disconnected</h2>
+          <p className="text-text-lo mb-8 max-w-sm">Please add your NEXT_PUBLIC_SUPABASE_URL and ANON_KEY to your Vercel Environment Variables.</p>
+        </div>
+      )
+    }
+
     // Empty State / Onboarding View
     return (
       <div className="flex flex-col items-center justify-center p-6 mt-12 text-center">
@@ -57,7 +70,7 @@ export function RecipeGrid() {
         <h2 className="text-2xl font-bold text-text-hi mb-2">Your kitchen, your rules.</h2>
         <p className="text-text-lo mb-8 max-w-sm">Add your first recipe — paste a link or type it in.</p>
         
-        <Link href="/recipes/new" className="bg-primary text-white border border-border hover:bg-stone-800 font-bold py-4 px-8 rounded-md shadow-sm border border-border hover:bg-stone-500  hover:shadow-sm border border-border transition-all flex items-center gap-2">
+        <Link href="/recipes/new" className="bg-primary text-white border border-border hover:bg-stone-800 font-bold py-4 px-8 rounded-md shadow-sm border border-border transition-all flex items-center gap-2">
           <Plus className="w-5 h-5" /> Add Recipe
         </Link>
         <p className="mt-8 text-sm text-text-lo font-medium flex items-center gap-2">
