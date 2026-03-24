@@ -1,10 +1,50 @@
 import { NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
 
+function isUrlSafe(urlString: string): boolean {
+  try {
+    const parsedUrl = new URL(urlString)
+
+    // Only allow HTTP and HTTPS protocols
+    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+      return false
+    }
+
+    const hostname = parsedUrl.hostname
+
+    // Block localhost
+    if (hostname === 'localhost') return false
+
+    // Block private IP ranges (IPv4)
+    // 10.0.0.0 - 10.255.255.255
+    if (hostname.startsWith('10.')) return false
+    // 172.16.0.0 - 172.31.255.255
+    if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)) return false
+    // 192.168.0.0 - 192.168.255.255
+    if (hostname.startsWith('192.168.')) return false
+    // 127.0.0.0 - 127.255.255.255 (loopback)
+    if (hostname.startsWith('127.')) return false
+    // 169.254.0.0 - 169.254.255.255 (link-local)
+    if (hostname.startsWith('169.254.')) return false
+
+    // Block internal domains
+    if (hostname.endsWith('.local') || hostname.endsWith('.internal')) return false
+
+    return true
+  } catch {
+    return false // Invalid URL format
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const { url } = await request.json()
     if (!url) return NextResponse.json({ error: 'URL is required' }, { status: 400 })
+
+    // SSRF Protection: Validate URL before fetching
+    if (!isUrlSafe(url)) {
+      return NextResponse.json({ error: 'Invalid or forbidden URL' }, { status: 400 })
+    }
 
     const response = await fetch(url, {
       headers: {
@@ -139,6 +179,8 @@ export async function POST(request: Request) {
     })
 
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Scrape failed' }, { status: 500 })
+    // Log the error internally but do not leak the exact cause to the client
+    console.error('Scraping error:', error)
+    return NextResponse.json({ error: 'Failed to process the URL' }, { status: 500 })
   }
 }
