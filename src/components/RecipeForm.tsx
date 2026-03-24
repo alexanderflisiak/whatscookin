@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Trash2, Link as LinkIcon, Download, Loader2, Save } from 'lucide-react'
+import { Plus, Trash2, Link as LinkIcon, Download, Loader2, Save, ImagePlus } from 'lucide-react'
 import type { Recipe, RecipeIngredient, Tag } from '@/lib/types'
 
 type RecipeFormData = {
@@ -24,6 +24,8 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
   const [isScraping, setIsScraping] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   const { register, control, handleSubmit, setValue, getValues, watch } = useForm<RecipeFormData>({
     defaultValues: {
@@ -103,6 +105,22 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
           .update(recipePayload)
           .eq('id', recipeId)
         if (recipeErr) throw recipeErr
+      }
+
+      // Handle Image Upload
+      if (imageFile) {
+        const fileExt = imageFile.name.split('.').pop()
+        const fileName = `${recipeId}/${Date.now()}.${fileExt}`
+        
+        const { error: uploadError } = await supabase.storage
+          .from('recipe-images')
+          .upload(fileName, imageFile, { upsert: true })
+
+        if (!uploadError) {
+          await supabase.from('recipes').update({ image_path: fileName }).eq('id', recipeId)
+        } else {
+          console.error("Image upload failed:", uploadError)
+        }
       }
 
       // 2. Handle Ingredients
@@ -191,6 +209,33 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
             {...register('source_url')}
             className="w-full p-2 border border-border rounded-lg bg-surface focus:ring-2 focus:ring-stone-300 outline-none text-sm"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold mb-1">Recipe Photo</label>
+          <div className="flex items-center gap-4">
+            {previewUrl ? (
+              <img src={previewUrl} alt="Preview" className="w-24 h-24 object-cover rounded-md border border-border shadow-sm" />
+            ) : initialData?.image_path ? (
+              <div className="w-24 h-24 object-cover rounded-md border border-border bg-stone-100 flex items-center justify-center text-xs text-text-lo font-medium text-center p-2 shadow-sm">Existing Image Saved</div>
+            ) : (
+              <div className="w-24 h-24 object-cover rounded-md border border-border bg-stone-50 flex flex-col items-center justify-center text-text-lo shadow-sm">
+                <ImagePlus className="w-8 h-8 mb-1 opacity-40" />
+              </div>
+            )}
+            <input 
+              type="file" 
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) {
+                  setImageFile(file)
+                  setPreviewUrl(URL.createObjectURL(file))
+                }
+              }}
+              className="text-sm text-text-lo file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-stone-100 file:text-text-hi hover:file:bg-stone-200 cursor-pointer focus:outline-none"
+            />
+          </div>
         </div>
 
         <div>
