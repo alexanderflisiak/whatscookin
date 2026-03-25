@@ -96,6 +96,8 @@ export default function ShoppingListPage() {
         />
         <button 
           type="submit" 
+          aria-label="Add item"
+          title="Add item"
           disabled={!newItem.trim()}
           className="w-12 h-12 shrink-0 bg-primary text-white border border-border hover:bg-stone-800 rounded-md flex items-center justify-center hover:bg-stone-500 disabled:opacity-50 transition-colors shadow-sm"
         >
@@ -125,7 +127,7 @@ export default function ShoppingListPage() {
                     {item.quantity && <span className="font-semibold mr-2">{item.quantity}</span>}
                     <span className="font-medium">{item.item_name}</span>
                   </div>
-                  <button onClick={() => handleDelete(item.id)} className="text-stone-300 hover:text-danger p-1 opacity-0 group-hover:opacity-100 transition-all">
+                  <button aria-label="Delete item" title="Delete item" onClick={() => handleDelete(item.id)} className="text-stone-300 hover:text-danger p-1 opacity-0 group-hover:opacity-100 transition-all">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -142,6 +144,8 @@ export default function ShoppingListPage() {
               {boughtItems.map(item => (
                 <div key={item.id} className="flex items-center gap-3 py-2 px-1 group">
                   <button 
+                    aria-label="Unmark as bought"
+                    title="Unmark as bought"
                     onClick={() => toggleBought(item.id, item.is_bought)}
                     className="w-6 h-6 rounded-full bg-success flex items-center justify-center text-white shrink-0 hover:bg-green-600 transition-colors"
                   >
@@ -152,6 +156,8 @@ export default function ShoppingListPage() {
                     {item.item_name}
                   </div>
                   <button 
+                    aria-label="Undo marked as bought"
+                    title="Undo marked as bought"
                     onClick={() => toggleBought(item.id, item.is_bought)}
                     className="text-text-lo hover:text-text-hi p-1 flex items-center gap-1 text-xs font-bold"
                   >
