@@ -1,0 +1,3 @@
+## 2024-05-24 - Supabase Loop Inserts (N+1 queries)
+**Learning:** Sequential `.insert()` or `.select()` queries inside loops (like mapping over a list of ingredients) cause severe N+1 bottlenecks when communicating with Supabase over the network.
+**Action:** Always batch fetch existing relational items using `.in()`, batch insert missing items using array payloads with `.insert([])`, and batch insert many-to-many bridge records to minimize the number of queries to a constant factor.
