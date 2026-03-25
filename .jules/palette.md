@@ -1,0 +1,3 @@
+## 2024-05-16 - Make custom checkboxes accessible and add ARIA labels to icon-only links
+**Learning:** Custom interactive elements like toggles acting as checkboxes require `role="checkbox"` and `aria-checked` to be recognized properly by screen readers. Icon-only links using Next.js `<Link>` component require explicit `aria-label`s for accessibility.
+**Action:** Always ensure custom checkboxes explicitly declare their `role` and state (`aria-checked`). Add `aria-label` to any icon-only buttons or links.
