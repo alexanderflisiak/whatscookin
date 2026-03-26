@@ -117,6 +117,7 @@ export function CookModeOverlay({ title, instructions, onClose }: CookModeOverla
         <button 
           onClick={handlePrev}
           disabled={currentStep === 0}
+          aria-label="Previous step"
           className="h-20 bg-stone-200 rounded-md flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none hover:bg-stone-300 active:scale-95 transition-all text-stone-600 touch-none"
         >
           <ChevronLeft className="w-10 h-10" />
@@ -125,6 +126,7 @@ export function CookModeOverlay({ title, instructions, onClose }: CookModeOverla
         {isDone ? (
           <button 
             onClick={onClose}
+            aria-label="Done"
             className="h-20 bg-success text-white rounded-md flex items-center justify-center hover:bg-green-600 active:scale-95 transition-all font-bold text-2xl shadow-sm border border-border touch-none"
           >
             <Check className="w-8 h-8 mr-2" /> Done
@@ -132,6 +134,7 @@ export function CookModeOverlay({ title, instructions, onClose }: CookModeOverla
         ) : (
           <button 
             onClick={handleNext}
+            aria-label="Next step"
             className="h-20 bg-primary text-white border border-border hover:bg-stone-800 rounded-md flex items-center justify-center active:scale-95 transition-all shadow-sm touch-none"
           >
             <ChevronRight className="w-10 h-10" />
