@@ -182,9 +182,10 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
               type="button"
               onClick={handleScrape} 
               disabled={isScraping || !scrapeUrl}
-              className="bg-stone-200 text-text-hi px-4 py-2 rounded-lg font-medium hover:bg-stone-300 disabled:opacity-50 flex items-center gap-2"
+              title={!scrapeUrl ? "Enter a URL to scrape" : "Scrape recipe from URL"}
+              className="bg-stone-200 text-text-hi px-4 py-2 rounded-lg font-medium hover:bg-stone-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:ring-offset-1 outline-none"
             >
-              {isScraping ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              {isScraping ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <Download className="w-4 h-4" aria-hidden="true" />}
               Scrape
             </button>
           </div>
@@ -271,9 +272,10 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
                 <button 
                   type="button" 
                   onClick={() => remove(index)}
-                  className="p-2 text-text-lo hover:text-danger hover:bg-red-50 rounded-lg transition-colors mt-0.5 shrink-0"
+                  aria-label="Remove ingredient"
+                  className="p-2 text-text-lo hover:text-danger hover:bg-red-50 rounded-lg transition-colors mt-0.5 shrink-0 focus-visible:ring-2 focus-visible:ring-danger focus-visible:ring-offset-1 outline-none"
                 >
-                  <Trash2 className="w-5 h-5" />
+                  <Trash2 className="w-5 h-5" aria-hidden="true" />
                 </button>
               </div>
             ))}

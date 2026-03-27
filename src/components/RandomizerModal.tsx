@@ -76,12 +76,13 @@ export function RandomizerModal({ isOpen, onClose }: RandomizerModalProps) {
             Surprise Me
           </h2>
 
-          <div className="flex gap-2 mb-6">
+          <div className="flex gap-2 mb-6" role="group" aria-label="Meal type">
             {['All', 'Breakfast', 'Lunch', 'Dinner'].map(t => (
               <button
                 key={t}
                 onClick={() => setMealType(t)}
-                className={`px-3 py-1.5 text-sm rounded-full font-medium transition-colors ${
+                aria-pressed={mealType === t}
+                className={`px-3 py-1.5 text-sm rounded-full font-medium transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 outline-none ${
                   mealType === t ? 'bg-primary text-white border border-border hover:bg-stone-800' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
                 }`}
               >
