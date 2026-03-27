@@ -2,3 +2,7 @@
 **Vulnerability:** The `/api/scrape` route allowed fetching any user-provided URL unconditionally, creating an SSRF (Server-Side Request Forgery) window into the backend network infrastructure. Furthermore, any resultant unhandled fetch exceptions were leaked directly to the client via `error.message`.
 **Learning:** In Next.js App Router applications, unauthenticated proxy or scraping endpoints require stringent validation. By default, standard fetch will happily request `http://localhost:3000` or `169.254.169.254` (cloud metadata).
 **Prevention:** Always implement an explicit hostname blocklist (private IP ranges, `localhost`, etc.) and ensure the protocol is restricted strictly to `http` or `https`. When proxying outbound requests, do not echo back raw trace/network errors to client API consumers.
+## 2024-05-18 - [Auth Bypass Vulnerability in API Route]
+**Vulnerability:** The `/api/scrape/route.ts` API route was missing authentication checks and was excluded from `middleware.ts` protections, making the server open to unauthenticated SSRF (even though internal ranges were blacklisted, the server could still act as an unauthenticated open proxy).
+**Learning:** In this specific Next.js codebase, the global `middleware.ts` explicitly bypasses all routes starting with `/api`. Therefore, every custom API route must manually instantiate `createClient` and verify `supabase.auth.getUser()`.
+**Prevention:** Always verify if a newly discovered or created API route requires authentication and manually implement the check using `@/lib/supabase/server`.
