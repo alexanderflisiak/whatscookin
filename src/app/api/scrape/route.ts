@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
+import { createClient } from '@/lib/supabase/server'
 
 function isUrlSafe(urlString: string): boolean {
   try {
@@ -38,6 +39,14 @@ function isUrlSafe(urlString: string): boolean {
 
 export async function POST(request: Request) {
   try {
+    // Security: Require authentication for API routes
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { url } = await request.json()
     if (!url) return NextResponse.json({ error: 'URL is required' }, { status: 400 })
 
