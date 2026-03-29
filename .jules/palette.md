@@ -1,0 +1,3 @@
+## 2024-05-18 - Improve icon-only button a11y with toggle state
+**Learning:** Found that custom toggle icon buttons (like 'Lazy Mode') lacked state communication for screen readers and visible focus indicators for keyboard navigation.
+**Action:** Always include `aria-label` and `focus-visible` utility classes (`focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:outline-none`) on all icon-only buttons. For toggle buttons specifically, ensure `aria-pressed={state}` is applied to communicate current state to assistive technologies.
