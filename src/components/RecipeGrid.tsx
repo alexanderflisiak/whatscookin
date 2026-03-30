@@ -62,7 +62,7 @@ export function RecipeGrid() {
     return result
   }, [deferredSearch, recipes, fuse, isLazyFilter])
 
-  if (recipes.length === 0) {
+  const renderEmptyState = () => {
     const hasKeys = !!process.env.NEXT_PUBLIC_SUPABASE_URL
     if (!hasKeys) {
       return (
@@ -112,14 +112,17 @@ export function RecipeGrid() {
           <button 
             onClick={() => setRandomizerOpen(true)}
             title="Surprise Me"
-            className="shrink-0 w-12 h-12 bg-white border border-border rounded-md flex items-center justify-center text-text-hi hover:bg-stone-50 transition-colors shadow-sm"
+            aria-label="Surprise Me"
+            className="shrink-0 w-12 h-12 bg-white border border-border rounded-md flex items-center justify-center text-text-hi hover:bg-stone-50 transition-colors shadow-sm focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:outline-none"
           >
             <Dices className="w-6 h-6" />
           </button>
           <button 
             onClick={() => setIsLazyFilter(!isLazyFilter)}
             title="I'm Lazy Mode"
-            className={`shrink-0 w-12 h-12 border border-border rounded-md flex items-center justify-center transition-colors shadow-sm ${
+            aria-label="I'm Lazy Mode"
+            aria-pressed={isLazyFilter}
+            className={`shrink-0 w-12 h-12 border border-border rounded-md flex items-center justify-center transition-colors shadow-sm focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:outline-none ${
               isLazyFilter ? 'bg-orange-100 text-orange-800 border-orange-200 shadow-inner' : 'bg-white text-text-hi hover:bg-stone-50'
             }`}
           >
@@ -130,11 +133,13 @@ export function RecipeGrid() {
         {/* Placeholder for Tags Filter Bar */}
       </div>
 
-      <div className="px-4 py-4 grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {filteredRecipes.map(recipe => (
-          <RecipeCard key={recipe.id} recipe={recipe} />
-        ))}
-      </div>
+      {recipes.length === 0 ? renderEmptyState() : (
+        <div className="px-4 py-4 grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {filteredRecipes.map(recipe => (
+            <RecipeCard key={recipe.id} recipe={recipe} />
+          ))}
+        </div>
+      )}
 
       <RandomizerModal isOpen={isRandomizerOpen} onClose={() => setRandomizerOpen(false)} />
     </>
