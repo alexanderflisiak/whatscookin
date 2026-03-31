@@ -1,0 +1,3 @@
+## 2024-04-01 - RecipeGrid Accessibility Polish
+**Learning:** Found multiple interactive elements (search input and icon-only buttons) missing critical ARIA attributes and keyboard focus indicators, making the primary recipe navigation tools inaccessible to screen readers and keyboard users.
+**Action:** Applied `aria-label`, `aria-pressed`, and Tailwind `focus-visible` utility classes (`focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:outline-none`) to ensure clear semantics and visual feedback. Always verify keyboard navigation and screen reader semantics for custom interactive controls.
