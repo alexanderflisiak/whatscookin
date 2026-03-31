@@ -1,0 +1,3 @@
+## 2024-05-14 - Fix N+1 Query Bottleneck in Supabase Inserts
+**Learning:** Sequential database operations inside loops in Next.js Server Actions or API Routes connecting to Supabase create significant N+1 network bottlenecks. Each `await` in the loop halts execution waiting for a roundtrip, multiplying the total wait time by the number of iterations (e.g., saving a recipe with 20 ingredients takes 40-60 sequential requests).
+**Action:** Always batch fetch existing relational items using `.in()`, identify missing records in memory, batch `.insert([])` the missing records, and finally batch `.insert([])` the junction table payloads.
