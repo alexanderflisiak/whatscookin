@@ -52,7 +52,13 @@ export function RandomizerModal({ isOpen, onClose }: RandomizerModalProps) {
       if (error) throw error
       
       if (data && data.length > 0) {
-        const randomItem = data[Math.floor(Math.random() * data.length)] as Recipe
+        // Use window.crypto.getRandomValues for cryptographically secure random number generation
+        // instead of insecure Math.random()
+        const randomValues = new Uint32Array(1)
+        window.crypto.getRandomValues(randomValues)
+        const randomIndex = randomValues[0] % data.length
+
+        const randomItem = data[randomIndex] as Recipe
         setRecipe(randomItem)
       } else {
         setErrorMsg('Your cookbook is empty!')
