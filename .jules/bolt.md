@@ -1,0 +1,3 @@
+## 2024-04-01 - Optimizing Supabase Insert Operations
+**Learning:** Sequential `.insert()` and `.select()` operations within a loop (e.g., when adding ingredients in a form) cause an N+1 query problem, which severely bottlenecks database performance and makes the application visibly slower for the user as the loop scales linearly with inputs.
+**Action:** When handling relationships or multiple dynamic items like ingredients, always resolve queries concurrently using `.in()` to batch select existing entities. Process the missing elements into arrays, and perform bulk insertions with `.insert([])`. In Next.js with Supabase, preventing N+1 queries by flattening loops into single batched promises makes operations significantly faster and limits network calls.
