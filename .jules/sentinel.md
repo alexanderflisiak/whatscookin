@@ -2,3 +2,8 @@
 **Vulnerability:** The `/api/scrape` route allowed fetching any user-provided URL unconditionally, creating an SSRF (Server-Side Request Forgery) window into the backend network infrastructure. Furthermore, any resultant unhandled fetch exceptions were leaked directly to the client via `error.message`.
 **Learning:** In Next.js App Router applications, unauthenticated proxy or scraping endpoints require stringent validation. By default, standard fetch will happily request `http://localhost:3000` or `169.254.169.254` (cloud metadata).
 **Prevention:** Always implement an explicit hostname blocklist (private IP ranges, `localhost`, etc.) and ensure the protocol is restricted strictly to `http` or `https`. When proxying outbound requests, do not echo back raw trace/network errors to client API consumers.
+
+## 2025-04-03 - [Incomplete SSRF blocklist allowed IPv6 and 0.0.0.0 bypasses]
+**Vulnerability:** The SSRF protection on the `/api/scrape` endpoint blocked common IPv4 local networks (like `127.0.0.1`, `10.x.x.x`), but failed to block their IPv6 equivalents (like `[::1]`) and the `0.0.0.0` wildcard address, allowing attackers to bypass the protection and access local services.
+**Learning:** Network stacks often treat `0.0.0.0` as `localhost` and readily resolve IPv6 loopback and private network ranges. An SSRF blocklist is incomplete if it only targets IPv4 addresses.
+**Prevention:** When implementing custom SSRF protection, explicitly include both IPv4 ranges and their IPv6 equivalents (`::1`, `[::1]`, `fc00:`, `fd00:`, `fe80:`, and IPv4-mapped IPv6 like `::ffff:`). Always block `0.0.0.0` as it can be routed to localhost.
