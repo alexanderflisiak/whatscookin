@@ -1,0 +1,1 @@
+## 2026-04-03 - Supabase N+1 Query Prevention\n**Learning:** Sequential database operations inside loops in `RecipeForm.tsx` caused significant N+1 query network bottlenecks.\n**Action:** Always batch fetch existing relational items using `.in()`, and batch insert using array payloads with `.insert([])` when saving arrays of ingredients.
