@@ -27,6 +27,18 @@ function isUrlSafe(urlString: string): boolean {
     // 169.254.0.0 - 169.254.255.255 (link-local)
     if (hostname.startsWith('169.254.')) return false
 
+    // Block 0.0.0.0 (often routes to localhost)
+    if (hostname === '0.0.0.0') return false
+
+    // Block IPv6 loopback and unspecified
+    if (hostname === '[::1]' || hostname === '[::]') return false
+
+    // Block IPv6 Unique Local (fc00::/7) and Link-Local (fe80::/10)
+    if (/^\[(fc|fd|fe[89ab])/i.test(hostname)) return false
+
+    // Block IPv4-mapped IPv6 addresses
+    if (hostname.includes('::ffff:')) return false
+
     // Block internal domains
     if (hostname.endsWith('.local') || hostname.endsWith('.internal')) return false
 
