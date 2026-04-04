@@ -10,10 +10,16 @@ function isUrlSafe(urlString: string): boolean {
       return false
     }
 
-    const hostname = parsedUrl.hostname
+    let hostname = parsedUrl.hostname
 
-    // Block localhost
+    // Remove brackets from IPv6 for easier matching
+    if (hostname.startsWith('[') && hostname.endsWith(']')) {
+      hostname = hostname.slice(1, -1)
+    }
+
+    // Block localhost and ANY address (0.0.0.0)
     if (hostname === 'localhost') return false
+    if (hostname === '0.0.0.0') return false
 
     // Block private IP ranges (IPv4)
     // 10.0.0.0 - 10.255.255.255
@@ -26,6 +32,16 @@ function isUrlSafe(urlString: string): boolean {
     if (hostname.startsWith('127.')) return false
     // 169.254.0.0 - 169.254.255.255 (link-local)
     if (hostname.startsWith('169.254.')) return false
+
+    // Block IPv6 Loopback, unspecified, and internal ranges
+    if (hostname === '::1') return false
+    if (hostname === '::') return false
+    // IPv6 Unique Local Address (fc00::/7)
+    if (/^f[cd][0-9a-f]{2}:/i.test(hostname)) return false
+    // IPv6 Link-Local Address (fe80::/10)
+    if (/^fe[89ab][0-9a-f]:/i.test(hostname)) return false
+    // IPv4-mapped IPv6 addresses
+    if (hostname.startsWith('::ffff:')) return false
 
     // Block internal domains
     if (hostname.endsWith('.local') || hostname.endsWith('.internal')) return false
