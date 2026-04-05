@@ -12,23 +12,33 @@ function isUrlSafe(urlString: string): boolean {
 
     const hostname = parsedUrl.hostname
 
-    // Block localhost
-    if (hostname === 'localhost') return false
+    // Strip brackets for IPv6 parsing
+    const cleanHostname = hostname.replace(/^\[|\]$/g, '')
+
+    // Block localhost & 0.0.0.0
+    if (cleanHostname === 'localhost') return false
+    if (cleanHostname === '0.0.0.0') return false
+
+    // Block IPv6 loopback and private ranges
+    if (cleanHostname === '::1' || cleanHostname === '::') return false
+    if (cleanHostname.toLowerCase().startsWith('::ffff:127.')) return false // IPv4-mapped loopback
+    if (cleanHostname.toLowerCase().startsWith('fc00:') || cleanHostname.toLowerCase().startsWith('fd00:')) return false // ULA
+    if (cleanHostname.toLowerCase().startsWith('fe80:')) return false // Link-local
 
     // Block private IP ranges (IPv4)
     // 10.0.0.0 - 10.255.255.255
-    if (hostname.startsWith('10.')) return false
+    if (cleanHostname.startsWith('10.')) return false
     // 172.16.0.0 - 172.31.255.255
-    if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)) return false
+    if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(cleanHostname)) return false
     // 192.168.0.0 - 192.168.255.255
-    if (hostname.startsWith('192.168.')) return false
+    if (cleanHostname.startsWith('192.168.')) return false
     // 127.0.0.0 - 127.255.255.255 (loopback)
-    if (hostname.startsWith('127.')) return false
+    if (cleanHostname.startsWith('127.')) return false
     // 169.254.0.0 - 169.254.255.255 (link-local)
-    if (hostname.startsWith('169.254.')) return false
+    if (cleanHostname.startsWith('169.254.')) return false
 
     // Block internal domains
-    if (hostname.endsWith('.local') || hostname.endsWith('.internal')) return false
+    if (cleanHostname.endsWith('.local') || cleanHostname.endsWith('.internal')) return false
 
     return true
   } catch {

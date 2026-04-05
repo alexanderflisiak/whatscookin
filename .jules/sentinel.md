@@ -2,3 +2,8 @@
 **Vulnerability:** The `/api/scrape` route allowed fetching any user-provided URL unconditionally, creating an SSRF (Server-Side Request Forgery) window into the backend network infrastructure. Furthermore, any resultant unhandled fetch exceptions were leaked directly to the client via `error.message`.
 **Learning:** In Next.js App Router applications, unauthenticated proxy or scraping endpoints require stringent validation. By default, standard fetch will happily request `http://localhost:3000` or `169.254.169.254` (cloud metadata).
 **Prevention:** Always implement an explicit hostname blocklist (private IP ranges, `localhost`, etc.) and ensure the protocol is restricted strictly to `http` or `https`. When proxying outbound requests, do not echo back raw trace/network errors to client API consumers.
+
+## 2024-05-24 - Fix SSRF Bypass via 0.0.0.0 and IPv6
+**Vulnerability:** The `isUrlSafe` SSRF protection in `/api/scrape/route.ts` only blocked standard IPv4 private/loopback addresses (like `127.0.0.1` and `10.0.0.0`). It could be bypassed using `0.0.0.0` or IPv6 loopback/private addresses like `[::1]`, `[::]`, `[fd00::1]`.
+**Learning:** Node.js native `URL` parser retains the brackets for IPv6 addresses (e.g. `[::1]`). Standard IPv4-only blocklists are insufficient as malicious users can request the host's own internal services via `0.0.0.0` or IPv6 equivalents.
+**Prevention:** Always strip brackets from the parsed hostname (`hostname.replace(/^\[|\]$/g, '')`) before validation. Explicitly block `0.0.0.0` and IPv6 loopback (`::1`, `::`), IPv4-mapped loopback (`::ffff:127.`), ULA (`fc00:`, `fd00:`), and Link-Local (`fe80:`).
