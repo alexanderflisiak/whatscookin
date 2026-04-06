@@ -1,3 +1,8 @@
+## 2025-02-04 - [SSRF bypass via 0.0.0.0 and IPv6 hostnames]
+**Vulnerability:** The `isUrlSafe` function in `/api/scrape/route.ts` only blocked IPv4 loopback and private IP addresses. It missed `0.0.0.0`, which behaves as a loopback bypass on many Linux/Unix systems, and completely ignored IPv6 equivalents (`::1`, `fc00::/7`, `::ffff:127.0.0.1`, etc.).
+**Learning:** Native `URL` parsing (`new URL(urlString).hostname`) retains the surrounding brackets for IPv6 addresses (e.g., `[::1]`). Custom IP validation must explicitly strip these brackets. Additionally, attackers can bypass basic `127.0.0.1` filters by using `0.0.0.0` or IPv4-mapped IPv6 addresses to hit internal services.
+**Prevention:** Always block `0.0.0.0` and handle IPv6 brackets (`replace(/^\[|\]$/g, '')`) when implementing custom SSRF blocklists. Ensure both IPv4 and their IPv6 equivalents are explicitly blocked to prevent loopback and private network bypasses.
+
 ## 2024-05-18 - [Critical SSRF vulnerability via Scraping Endpoint]
 **Vulnerability:** The `/api/scrape` route allowed fetching any user-provided URL unconditionally, creating an SSRF (Server-Side Request Forgery) window into the backend network infrastructure. Furthermore, any resultant unhandled fetch exceptions were leaked directly to the client via `error.message`.
 **Learning:** In Next.js App Router applications, unauthenticated proxy or scraping endpoints require stringent validation. By default, standard fetch will happily request `http://localhost:3000` or `169.254.169.254` (cloud metadata).
