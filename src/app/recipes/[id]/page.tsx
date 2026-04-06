@@ -29,22 +29,18 @@ export default function RecipeDetailPage() {
       if (!id || typeof id !== 'string') return
 
       try {
-        const { data: recData, error: recErr } = await supabase
-          .from('recipes')
-          .select('*, author:profiles(*)').eq('id', id).single()
+        // ⚡ Bolt: Fetch recipe, ingredients, and tags concurrently to prevent network waterfalls
+        const [recRes, ingRes, tagRes] = await Promise.all([
+          supabase.from('recipes').select('*, author:profiles(*)').eq('id', id).single(),
+          supabase.from('recipe_ingredients').select('*, ingredient:ingredients(*)').eq('recipe_id', id),
+          supabase.from('recipe_tags').select('tag:tags(*)').eq('recipe_id', id)
+        ])
 
-        if (recErr) throw recErr
-        setRecipe(recData)
+        if (recRes.error) throw recRes.error
+        setRecipe(recRes.data)
 
-        const { data: ingData } = await supabase
-          .from('recipe_ingredients')
-          .select('*, ingredient:ingredients(*)').eq('recipe_id', id)
-        if (ingData) setIngredients(ingData as any[])
-
-        const { data: tagData } = await supabase
-          .from('recipe_tags')
-          .select('tag:tags(*)').eq('recipe_id', id)
-        if (tagData) setTags(tagData.map((td: any) => td.tag as Tag))
+        if (ingRes.data) setIngredients(ingRes.data as any[])
+        if (tagRes.data) setTags(tagRes.data.map((td: any) => td.tag as Tag))
       } catch (err: any) {
         setErrorMsg('Recipe not found.')
       } finally {

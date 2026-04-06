@@ -16,17 +16,21 @@ export default function EditRecipePage() {
     async function fetchRecipe() {
       if (!id || typeof id !== 'string') return
       try {
-        const { data: recData } = await supabase.from('recipes').select('*').eq('id', id).single()
-        if (!recData) throw new Error('Not found')
+        // ⚡ Bolt: Fetch recipe and ingredients concurrently to prevent network waterfalls
+        const [recRes, ingRes] = await Promise.all([
+          supabase.from('recipes').select('*').eq('id', id).single(),
+          supabase.from('recipe_ingredients').select('*, ingredient:ingredients(*)').eq('recipe_id', id)
+        ])
+
+        if (!recRes.data) throw new Error('Not found')
           
-        const { data: ingData } = await supabase.from('recipe_ingredients').select('*, ingredient:ingredients(*)').eq('recipe_id', id)
-        const ingredients = (ingData || []).map((i: any) => ({
+        const ingredients = (ingRes.data || []).map((i: any) => ({
           amount: i.amount || '',
           unit: i.unit || '',
           name: i.ingredient?.name || '',
         }))
 
-        setRecipe({ ...recData, ingredients } as any)
+        setRecipe({ ...recRes.data, ingredients } as any)
       } catch (err) {
         console.error(err)
       } finally {
