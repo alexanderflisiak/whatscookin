@@ -10,25 +10,53 @@ function isUrlSafe(urlString: string): boolean {
       return false
     }
 
-    const hostname = parsedUrl.hostname
+    let hostname = parsedUrl.hostname.toLowerCase()
 
-    // Block localhost
-    if (hostname === 'localhost') return false
+    // Node.js URL parser retains brackets for IPv6
+    if (hostname.startsWith('[') && hostname.endsWith(']')) {
+      hostname = hostname.slice(1, -1)
+    }
 
-    // Block private IP ranges (IPv4)
-    // 10.0.0.0 - 10.255.255.255
-    if (hostname.startsWith('10.')) return false
-    // 172.16.0.0 - 172.31.255.255
-    if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)) return false
-    // 192.168.0.0 - 192.168.255.255
-    if (hostname.startsWith('192.168.')) return false
-    // 127.0.0.0 - 127.255.255.255 (loopback)
-    if (hostname.startsWith('127.')) return false
-    // 169.254.0.0 - 169.254.255.255 (link-local)
-    if (hostname.startsWith('169.254.')) return false
+    // Block localhost, ANY, IPv6 localhost/unspecified, and internal domains
+    if (
+      ['localhost', '0.0.0.0', '::1', '::'].includes(hostname) ||
+      hostname.endsWith('.local') ||
+      hostname.endsWith('.internal')
+    ) {
+      return false
+    }
 
-    // Block internal domains
-    if (hostname.endsWith('.local') || hostname.endsWith('.internal')) return false
+    let checkHost = hostname
+    // Extract mapped IP if it's an IPv4-mapped IPv6 address
+    if (hostname.startsWith('::ffff:')) {
+      checkHost = hostname.slice(7)
+    }
+
+    // Block private IP ranges (IPv4) and their potential hex representations (Node.js normalizes some to hex)
+    if (
+      checkHost.startsWith('10.') ||
+      checkHost.startsWith('127.') ||
+      checkHost.startsWith('169.254.') ||
+      checkHost.startsWith('192.168.') ||
+      /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(checkHost)
+    ) {
+      return false
+    }
+
+    // Explicitly target the node URL normalized IPv4-mapped hex output, enforcing that it is part of an IPv6 structure
+    // This avoids accidentally blocking domains like '0a.com' or '7fast.com'
+    if (hostname.startsWith('::ffff:')) {
+       if (
+         /^(7f|0a|c0a8|a9fe|0:|0$)/i.test(checkHost) ||
+         /^ac(1[0-9a-f]|2[0-9a-f]|3[0-1])/i.test(checkHost) ||
+         /^0?a[0-9a-f]{0,2}:/i.test(checkHost)
+       ) {
+         return false
+       }
+    }
+
+    // Block IPv6 Unique Local Addresses (fc00::/7) and Link-Local (fe80::/10)
+    if (/^(fc|fd|fe8|fe9|fea|feb)/i.test(hostname)) return false
 
     return true
   } catch {
@@ -46,12 +74,37 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid or forbidden URL' }, { status: 400 })
     }
 
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-      },
-    })
+    let currentUrl = url
+    let response: Response | null = null
+    let redirects = 0
+    const MAX_REDIRECTS = 5
+
+    while (redirects < MAX_REDIRECTS) {
+      if (!isUrlSafe(currentUrl)) {
+        return NextResponse.json({ error: 'Unsafe redirect detected' }, { status: 400 })
+      }
+
+      response = await fetch(currentUrl, {
+        redirect: 'manual',
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+        },
+      })
+
+      if (response.status >= 300 && response.status < 400 && response.headers.has('location')) {
+        const location = response.headers.get('location')
+        if (!location) break
+        currentUrl = new URL(location, currentUrl).toString()
+        redirects++
+      } else {
+        break
+      }
+    }
+
+    if (!response || redirects >= MAX_REDIRECTS) {
+      return NextResponse.json({ error: 'Too many redirects or failed to access URL' }, { status: 400 })
+    }
 
     if (!response.ok) {
       return NextResponse.json({ error: 'Failed to access URL' }, { status: 400 })
