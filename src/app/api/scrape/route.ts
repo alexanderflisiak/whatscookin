@@ -10,10 +10,10 @@ function isUrlSafe(urlString: string): boolean {
       return false
     }
 
-    const hostname = parsedUrl.hostname
+    const hostname = parsedUrl.hostname.replace(/^\[|\]$/g, '').toLowerCase()
 
-    // Block localhost
-    if (hostname === 'localhost') return false
+    // Block localhost and ANY IP address
+    if (hostname === 'localhost' || hostname === '0.0.0.0') return false
 
     // Block private IP ranges (IPv4)
     // 10.0.0.0 - 10.255.255.255
@@ -26,6 +26,11 @@ function isUrlSafe(urlString: string): boolean {
     if (hostname.startsWith('127.')) return false
     // 169.254.0.0 - 169.254.255.255 (link-local)
     if (hostname.startsWith('169.254.')) return false
+
+    // Block IPv6 equivalents and loopbacks
+    if (hostname === '::1' || hostname === '::') return false
+    // Block unique local addresses, link-local, and IPv4-mapped IPv6
+    if (/^(fc00|fd00|fe80|::ffff):/i.test(hostname)) return false
 
     // Block internal domains
     if (hostname.endsWith('.local') || hostname.endsWith('.internal')) return false
@@ -46,14 +51,44 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid or forbidden URL' }, { status: 400 })
     }
 
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-      },
-    })
+    let currentUrl = url
+    let response: Response | null = null
+    const MAX_REDIRECTS = 5
 
-    if (!response.ok) {
+    for (let i = 0; i <= MAX_REDIRECTS; i++) {
+      if (!isUrlSafe(currentUrl)) {
+        return NextResponse.json({ error: 'Invalid or forbidden redirect URL' }, { status: 400 })
+      }
+
+      response = await fetch(currentUrl, {
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+        },
+        redirect: 'manual', // Prevent automatic following of redirects
+      })
+
+      // Check if it's a redirect
+      if ([301, 302, 303, 307, 308].includes(response.status)) {
+        const location = response.headers.get('location')
+        if (!location) break // Redirect without location, stop
+
+        if (i === MAX_REDIRECTS) {
+          return NextResponse.json({ error: 'Too many redirects' }, { status: 400 })
+        }
+
+        // Resolve relative redirects against the current URL
+        try {
+          currentUrl = new URL(location, currentUrl).toString()
+        } catch {
+          return NextResponse.json({ error: 'Invalid redirect URL' }, { status: 400 })
+        }
+      } else {
+        break // Not a redirect, stop looping
+      }
+    }
+
+    if (!response || !response.ok) {
       return NextResponse.json({ error: 'Failed to access URL' }, { status: 400 })
     }
 
