@@ -10,10 +10,18 @@ function isUrlSafe(urlString: string): boolean {
       return false
     }
 
-    const hostname = parsedUrl.hostname
+    let hostname = parsedUrl.hostname
 
-    // Block localhost
-    if (hostname === 'localhost') return false
+    // Strip brackets for IPv6
+    if (hostname.startsWith('[') && hostname.endsWith(']')) {
+      hostname = hostname.slice(1, -1)
+    }
+
+    // Block localhost and 0.0.0.0
+    if (hostname === 'localhost' || hostname === '0.0.0.0') return false
+
+    // Block IPv6 localhost and unspecified
+    if (hostname === '::1' || hostname === '::' || hostname === '0:0:0:0:0:0:0:0' || hostname === '0:0:0:0:0:0:0:1') return false
 
     // Block private IP ranges (IPv4)
     // 10.0.0.0 - 10.255.255.255
@@ -26,6 +34,21 @@ function isUrlSafe(urlString: string): boolean {
     if (hostname.startsWith('127.')) return false
     // 169.254.0.0 - 169.254.255.255 (link-local)
     if (hostname.startsWith('169.254.')) return false
+
+    // Block IPv6 Unique Local Addresses (fc00::/7) and Link-Local (fe80::/10)
+    if (/^(fc|fd|fe8|fe9|fea|feb)[0-9a-f]{0,2}:/i.test(hostname)) return false
+
+    // Block IPv4-mapped IPv6 addresses
+    const lowerHost = hostname.toLowerCase()
+    if (lowerHost.startsWith('::ffff:')) {
+      const mapped = lowerHost.slice(7)
+      if (mapped.startsWith('127.') || /^7f[0-9a-f]{2}:/i.test(mapped)) return false
+      if (mapped.startsWith('10.') || /^a[0-9a-f]{2}:/i.test(mapped)) return false
+      if (mapped.startsWith('192.168.') || /^c0a8:/i.test(mapped)) return false
+      if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(mapped) || /^ac1[0-9a-f]:/i.test(mapped)) return false
+      if (mapped.startsWith('169.254.') || /^a9fe:/i.test(mapped)) return false
+      if (mapped === '0.0.0.0' || mapped === '0' || mapped.startsWith('00')) return false
+    }
 
     // Block internal domains
     if (hostname.endsWith('.local') || hostname.endsWith('.internal')) return false
@@ -41,19 +64,38 @@ export async function POST(request: Request) {
     const { url } = await request.json()
     if (!url) return NextResponse.json({ error: 'URL is required' }, { status: 400 })
 
-    // SSRF Protection: Validate URL before fetching
-    if (!isUrlSafe(url)) {
-      return NextResponse.json({ error: 'Invalid or forbidden URL' }, { status: 400 })
+    let currentUrl = url
+    let response: Response | null = null
+    const MAX_REDIRECTS = 5
+
+    // Fetch loop to follow redirects securely
+    for (let i = 0; i <= MAX_REDIRECTS; i++) {
+      // SSRF Protection: Validate URL before fetching
+      if (!isUrlSafe(currentUrl)) {
+        return NextResponse.json({ error: 'Invalid or forbidden URL' }, { status: 400 })
+      }
+
+      response = await fetch(currentUrl, {
+        redirect: 'manual', // Prevent automatic following to intercept and validate Location
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+        },
+      })
+
+      // If it's a redirect, get the Location header and continue loop
+      if (response.status >= 300 && response.status < 400) {
+        const location = response.headers.get('location')
+        if (!location) break
+        // Resolve relative redirects
+        currentUrl = new URL(location, currentUrl).toString()
+        continue
+      }
+
+      break // Not a redirect, exit loop
     }
 
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-      },
-    })
-
-    if (!response.ok) {
+    if (!response || !response.ok) {
       return NextResponse.json({ error: 'Failed to access URL' }, { status: 400 })
     }
 
