@@ -29,23 +29,26 @@ export default function RecipeDetailPage() {
       if (!id || typeof id !== 'string') return
 
       try {
-        const { data: recData, error: recErr } = await supabase
-          .from('recipes')
-          .select('*, author:profiles(*)').eq('id', id).single()
+        // ⚡ Bolt: Fetch recipe, ingredients, and tags concurrently to prevent network waterfall
+        const [
+          { data: recData, error: recErr },
+          { data: ingData, error: ingErr },
+          { data: tagData, error: tagErr }
+        ] = await Promise.all([
+          supabase.from('recipes').select('*, author:profiles(*)').eq('id', id).single(),
+          supabase.from('recipe_ingredients').select('*, ingredient:ingredients(*)').eq('recipe_id', id),
+          supabase.from('recipe_tags').select('tag:tags(*)').eq('recipe_id', id)
+        ])
 
+        // Supabase query failures don't throw rejections in Promise.all, so check errors manually
         if (recErr) throw recErr
+        if (ingErr) console.error("Ingredients fetch error:", ingErr)
+        if (tagErr) console.error("Tags fetch error:", tagErr)
+
         setRecipe(recData)
-
-        const { data: ingData } = await supabase
-          .from('recipe_ingredients')
-          .select('*, ingredient:ingredients(*)').eq('recipe_id', id)
         if (ingData) setIngredients(ingData as any[])
-
-        const { data: tagData } = await supabase
-          .from('recipe_tags')
-          .select('tag:tags(*)').eq('recipe_id', id)
         if (tagData) setTags(tagData.map((td: any) => td.tag as Tag))
-      } catch (err: any) {
+      } catch (err: unknown) {
         setErrorMsg('Recipe not found.')
       } finally {
         setLoading(false)
