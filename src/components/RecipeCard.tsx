@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Clock } from 'lucide-react'
@@ -7,7 +8,7 @@ type RecipeCardProps = {
   recipe: Recipe
 }
 
-export function RecipeCard({ recipe }: RecipeCardProps) {
+function RecipeCardComponent({ recipe }: RecipeCardProps) {
   // If we have an image_path, it's relative to the Supabase storage bucket 'recipe-images'
   const imageUrl = recipe.image_path 
     ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/recipe-images/${recipe.image_path}`
@@ -59,3 +60,7 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
     </Link>
   )
 }
+
+// ⚡ Bolt: React.memo prevents unnecessary child re-renders when the parent RecipeGrid
+// updates due to deferred search typing, keeping the UI responsive.
+export const RecipeCard = memo(RecipeCardComponent)
