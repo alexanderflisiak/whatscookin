@@ -1,0 +1,3 @@
+## 2024-05-18 - Ensure aria-pressed on toggle buttons
+**Learning:** When using icon-only buttons as toggles (like the "Lazy Mode" filter), adding an `aria-pressed` attribute is crucial to properly communicate the state to assistive technologies, beyond just visual changes or standard `aria-label`s. Also, always add focus-visible styles (`focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:outline-none`) so keyboard users have clear indication of active elements.
+**Action:** Always verify if an icon-only button functions as a simple trigger or a toggle. If it's a toggle, implement `aria-pressed={state}` to reflect its current status.
