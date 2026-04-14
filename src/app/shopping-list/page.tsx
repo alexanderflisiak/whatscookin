@@ -57,6 +57,12 @@ export default function ShoppingListPage() {
   }
 
   async function toggleBought(id: string, currentlyBought: boolean) {
+    const { data: userData } = await supabase.auth.getUser()
+    if (!userData.user) {
+      alert("Must be logged in to modify items.")
+      return
+    }
+
     await supabase
       .from('shopping_list')
       .update({ 
@@ -64,10 +70,21 @@ export default function ShoppingListPage() {
         bought_at: !currentlyBought ? new Date().toISOString() : null 
       })
       .eq('id', id)
+      .eq('created_by', userData.user.id)
   }
 
   async function handleDelete(id: string) {
-    await supabase.from('shopping_list').delete().eq('id', id)
+    const { data: userData } = await supabase.auth.getUser()
+    if (!userData.user) {
+      alert("Must be logged in to modify items.")
+      return
+    }
+
+    await supabase
+      .from('shopping_list')
+      .delete()
+      .eq('id', id)
+      .eq('created_by', userData.user.id)
   }
 
   const activeItems = items.filter(i => !i.is_bought)
