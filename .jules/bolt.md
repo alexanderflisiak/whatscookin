@@ -1,0 +1,3 @@
+## 2024-05-18 - Defer Value Needs Memoization
+**Learning:** `useDeferredValue` does not prevent child components from re-rendering when the parent component updates state. It only defers the state value update that you pass down. To actually prevent the expensive child re-renders (like a grid of `RecipeCard`s) during fast parent updates (like typing in a search box), you MUST pair `useDeferredValue` in the parent with `React.memo` on the child component.
+**Action:** When adding `useDeferredValue` to delay rendering of a list/grid, always ensure the list's child components are wrapped in `React.memo()` or the deferral will have no impact on rendering jank.
