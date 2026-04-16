@@ -1,0 +1,3 @@
+## 2024-04-16 - Icon-Only Toggle Buttons & Accessibility
+**Learning:** Icon-only toggle buttons (like the "Lazy Mode" button) require not just `aria-label` for screen readers, but specifically `aria-pressed={state}` to correctly communicate their toggle state. Furthermore, relying only on visual CSS class changes (like background color) is insufficient for keyboard users if `focus-visible` outlines aren't explicitly provided.
+**Action:** Always pair visual state changes with `aria-pressed` on toggle buttons, and ensure explicit `focus-visible:ring-2` styles are added since default browser focus rings are often suppressed by reset stylesheets.
