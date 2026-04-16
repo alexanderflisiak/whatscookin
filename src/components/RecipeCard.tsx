@@ -2,12 +2,15 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Clock } from 'lucide-react'
 import type { Recipe } from '@/lib/types'
+import { memo } from 'react'
 
 type RecipeCardProps = {
   recipe: Recipe
 }
 
-export function RecipeCard({ recipe }: RecipeCardProps) {
+// ⚡ Bolt: Memoize RecipeCard to prevent unnecessary re-renders when RecipeGrid's search state updates.
+// This must be paired with useDeferredValue in RecipeGrid to actually defer rendering of the list.
+export const RecipeCard = memo(function RecipeCard({ recipe }: RecipeCardProps) {
   // If we have an image_path, it's relative to the Supabase storage bucket 'recipe-images'
   const imageUrl = recipe.image_path 
     ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/recipe-images/${recipe.image_path}`
@@ -58,4 +61,4 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
       </div>
     </Link>
   )
-}
+})
