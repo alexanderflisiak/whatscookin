@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
+import * as dns from 'dns'
 
-function isUrlSafe(urlString: string): boolean {
+async function isUrlSafe(urlString: string): Promise<boolean> {
   try {
     const parsedUrl = new URL(urlString)
 
@@ -53,6 +54,20 @@ function isUrlSafe(urlString: string): boolean {
     // Block internal domains
     if (hostname.endsWith('.local') || hostname.endsWith('.internal')) return false
 
+    // DNS Rebinding / Hostname Resolution Check
+    const addresses = await dns.promises.lookup(hostname, { all: true })
+    for (const addr of addresses) {
+      const ip = addr.address
+      if (
+        ip === '127.0.0.1' || ip === '::1' || ip === '0.0.0.0' || ip === '::' ||
+        ip.startsWith('10.') || ip.startsWith('192.168.') || ip.startsWith('127.') || ip.startsWith('169.254.') ||
+        /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(ip) ||
+        /^(fc|fd|fe8|fe9|fea|feb)[0-9a-f]{0,2}:/i.test(ip)
+      ) {
+        return false
+      }
+    }
+
     return true
   } catch {
     return false // Invalid URL format
@@ -71,7 +86,7 @@ export async function POST(request: Request) {
     // Fetch loop to follow redirects securely
     for (let i = 0; i <= MAX_REDIRECTS; i++) {
       // SSRF Protection: Validate URL before fetching
-      if (!isUrlSafe(currentUrl)) {
+      if (!(await isUrlSafe(currentUrl))) {
         return NextResponse.json({ error: 'Invalid or forbidden URL' }, { status: 400 })
       }
 
