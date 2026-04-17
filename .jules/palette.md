@@ -1,0 +1,3 @@
+## 2024-05-18 - Missing ARIA Labels on Dynamic Form Arrays
+**Learning:** Found a recurring pattern in the design system where dynamic UI elements (like form array fields for adding/removing ingredients and next/prev steps in overlay modal) frequently lack `aria-label` attributes. Since these elements change dynamically or don't always have visible explicit text labels associated with them, screen readers fail to provide necessary context to the users.
+**Action:** When creating or reviewing components with dynamically added fields or icon-only navigation, ensure that `aria-label` is populated and interpolates context (e.g. `aria-label={"Remove ingredient " + (index + 1)}`).
