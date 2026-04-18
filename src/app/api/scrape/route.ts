@@ -1,7 +1,55 @@
 import { NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
+import dns from 'dns'
 
-function isUrlSafe(urlString: string): boolean {
+function isIpBlocked(ipOrHostname: string): boolean {
+  let hostname = ipOrHostname
+
+  // Strip brackets for IPv6
+  if (hostname.startsWith('[') && hostname.endsWith(']')) {
+    hostname = hostname.slice(1, -1)
+  }
+
+  // Block localhost and 0.0.0.0
+  if (hostname === 'localhost' || hostname === '0.0.0.0') return true
+
+  // Block IPv6 localhost and unspecified
+  if (hostname === '::1' || hostname === '::' || hostname === '0:0:0:0:0:0:0:0' || hostname === '0:0:0:0:0:0:0:1') return true
+
+  // Block private IP ranges (IPv4)
+  // 10.0.0.0 - 10.255.255.255
+  if (hostname.startsWith('10.')) return true
+  // 172.16.0.0 - 172.31.255.255
+  if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)) return true
+  // 192.168.0.0 - 192.168.255.255
+  if (hostname.startsWith('192.168.')) return true
+  // 127.0.0.0 - 127.255.255.255 (loopback)
+  if (hostname.startsWith('127.')) return true
+  // 169.254.0.0 - 169.254.255.255 (link-local)
+  if (hostname.startsWith('169.254.')) return true
+
+  // Block IPv6 Unique Local Addresses (fc00::/7) and Link-Local (fe80::/10)
+  if (/^(fc|fd|fe8|fe9|fea|feb)[0-9a-f]{0,2}:/i.test(hostname)) return true
+
+  // Block IPv4-mapped IPv6 addresses
+  const lowerHost = hostname.toLowerCase()
+  if (lowerHost.startsWith('::ffff:')) {
+    const mapped = lowerHost.slice(7)
+    if (mapped.startsWith('127.') || /^7f[0-9a-f]{2}:/i.test(mapped)) return true
+    if (mapped.startsWith('10.') || /^a[0-9a-f]{2}:/i.test(mapped)) return true
+    if (mapped.startsWith('192.168.') || /^c0a8:/i.test(mapped)) return true
+    if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(mapped) || /^ac1[0-9a-f]:/i.test(mapped)) return true
+    if (mapped.startsWith('169.254.') || /^a9fe:/i.test(mapped)) return true
+    if (mapped === '0.0.0.0' || mapped === '0' || mapped.startsWith('00')) return true
+  }
+
+  // Block internal domains
+  if (hostname.endsWith('.local') || hostname.endsWith('.internal')) return true
+
+  return false
+}
+
+async function isUrlSafe(urlString: string): Promise<boolean> {
   try {
     const parsedUrl = new URL(urlString)
 
@@ -10,48 +58,39 @@ function isUrlSafe(urlString: string): boolean {
       return false
     }
 
-    let hostname = parsedUrl.hostname
+    const hostname = parsedUrl.hostname
 
-    // Strip brackets for IPv6
-    if (hostname.startsWith('[') && hostname.endsWith(']')) {
-      hostname = hostname.slice(1, -1)
+    // Check hostname first
+    if (isIpBlocked(hostname)) {
+      return false
     }
 
-    // Block localhost and 0.0.0.0
-    if (hostname === 'localhost' || hostname === '0.0.0.0') return false
+    // DNS Resolution check to prevent DNS rebinding attacks
+    // We check every IP the domain resolves to
+    try {
+      let lookupHostname = hostname;
+      // dns.lookup fails with brackets on IPv6 addresses
+      if (lookupHostname.startsWith('[') && lookupHostname.endsWith(']')) {
+        lookupHostname = lookupHostname.slice(1, -1);
+      }
 
-    // Block IPv6 localhost and unspecified
-    if (hostname === '::1' || hostname === '::' || hostname === '0:0:0:0:0:0:0:0' || hostname === '0:0:0:0:0:0:0:1') return false
-
-    // Block private IP ranges (IPv4)
-    // 10.0.0.0 - 10.255.255.255
-    if (hostname.startsWith('10.')) return false
-    // 172.16.0.0 - 172.31.255.255
-    if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)) return false
-    // 192.168.0.0 - 192.168.255.255
-    if (hostname.startsWith('192.168.')) return false
-    // 127.0.0.0 - 127.255.255.255 (loopback)
-    if (hostname.startsWith('127.')) return false
-    // 169.254.0.0 - 169.254.255.255 (link-local)
-    if (hostname.startsWith('169.254.')) return false
-
-    // Block IPv6 Unique Local Addresses (fc00::/7) and Link-Local (fe80::/10)
-    if (/^(fc|fd|fe8|fe9|fea|feb)[0-9a-f]{0,2}:/i.test(hostname)) return false
-
-    // Block IPv4-mapped IPv6 addresses
-    const lowerHost = hostname.toLowerCase()
-    if (lowerHost.startsWith('::ffff:')) {
-      const mapped = lowerHost.slice(7)
-      if (mapped.startsWith('127.') || /^7f[0-9a-f]{2}:/i.test(mapped)) return false
-      if (mapped.startsWith('10.') || /^a[0-9a-f]{2}:/i.test(mapped)) return false
-      if (mapped.startsWith('192.168.') || /^c0a8:/i.test(mapped)) return false
-      if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(mapped) || /^ac1[0-9a-f]:/i.test(mapped)) return false
-      if (mapped.startsWith('169.254.') || /^a9fe:/i.test(mapped)) return false
-      if (mapped === '0.0.0.0' || mapped === '0' || mapped.startsWith('00')) return false
+      const addresses = await dns.promises.lookup(lookupHostname, { all: true });
+      for (const { address } of addresses) {
+        if (isIpBlocked(address)) {
+          return false;
+        }
+      }
+    } catch (dnsError: any) {
+      // If we can't resolve the domain, we fail closed unless it's a raw IP that's safe
+      if (dnsError.code === 'ENOTFOUND') {
+         // It might be a raw IP already (which doesn't need DNS resolution if not found, though node often resolves IPs to themselves)
+         // We already checked the hostname, so if it's safe, and fails DNS, it could be a fake domain or an IP.
+         // Let's just return true if it's a valid IP pattern that wasn't blocked, or false if it's a domain that doesn't exist.
+         // Actually, dns.promises.lookup succeeds for raw IP strings, so if it fails with ENOTFOUND, it's a non-existent domain.
+         return false;
+      }
+      return false;
     }
-
-    // Block internal domains
-    if (hostname.endsWith('.local') || hostname.endsWith('.internal')) return false
 
     return true
   } catch {
@@ -71,7 +110,7 @@ export async function POST(request: Request) {
     // Fetch loop to follow redirects securely
     for (let i = 0; i <= MAX_REDIRECTS; i++) {
       // SSRF Protection: Validate URL before fetching
-      if (!isUrlSafe(currentUrl)) {
+      if (!(await isUrlSafe(currentUrl))) {
         return NextResponse.json({ error: 'Invalid or forbidden URL' }, { status: 400 })
       }
 
