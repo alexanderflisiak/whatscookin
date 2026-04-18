@@ -1,0 +1,3 @@
+## 2025-04-18 - React.memo required alongside useDeferredValue
+**Learning:** In Next.js/React applications, when using `useDeferredValue` to defer expensive UI updates (like list filtering during search typing), you must pair it with `React.memo` on the list's child components (e.g. `RecipeCard`). `useDeferredValue` alone only gives React permission to interrupt the render; it does not prevent children from automatically re-rendering when the parent re-renders due to the original, non-deferred state updating.
+**Action:** When implementing `useDeferredValue` to optimize list rendering, always check if the individual list items are wrapped in `React.memo` to ensure the optimization is actually effective at preventing child re-renders.
