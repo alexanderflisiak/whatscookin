@@ -106,20 +106,24 @@ export function RecipeGrid() {
               placeholder="Search recipes..." 
               value={search}
               onChange={e => setSearch(e.target.value)}
+              aria-label="Search recipes"
               className="w-full pl-10 pr-4 py-3 bg-white border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-stone-300 transition-shadow text-text-hi placeholder:text-text-lo"
             />
           </div>
           <button 
             onClick={() => setRandomizerOpen(true)}
             title="Surprise Me"
-            className="shrink-0 w-12 h-12 bg-white border border-border rounded-md flex items-center justify-center text-text-hi hover:bg-stone-50 transition-colors shadow-sm"
+            aria-label="Surprise Me"
+            className="shrink-0 w-12 h-12 bg-white border border-border rounded-md flex items-center justify-center text-text-hi hover:bg-stone-50 transition-colors shadow-sm focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:outline-none"
           >
             <Dices className="w-6 h-6" />
           </button>
           <button 
             onClick={() => setIsLazyFilter(!isLazyFilter)}
             title="I'm Lazy Mode"
-            className={`shrink-0 w-12 h-12 border border-border rounded-md flex items-center justify-center transition-colors shadow-sm ${
+            aria-label="I'm Lazy Mode"
+            aria-pressed={isLazyFilter}
+            className={`shrink-0 w-12 h-12 border border-border rounded-md flex items-center justify-center transition-colors shadow-sm focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:outline-none ${
               isLazyFilter ? 'bg-orange-100 text-orange-800 border-orange-200 shadow-inner' : 'bg-white text-text-hi hover:bg-stone-50'
             }`}
           >

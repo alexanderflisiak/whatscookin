@@ -1,0 +1,3 @@
+## 2026-04-19 - Toggle Button Accessibility & Focus Rings
+**Learning:** In this project's design system, standardizing focus rings across custom icon-only toggle buttons using `focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:outline-none` significantly improves keyboard navigation visibility. Additionally, explicitly applying `aria-pressed` to toggle buttons (like the 'I'm Lazy Mode' filter) effectively communicates the active state to assistive technologies, avoiding confusion for screen reader users.
+**Action:** Always apply `aria-pressed={isActive}` to toggle buttons and use consistent `focus-visible` utility classes for interactive elements missing default focus indicators.
