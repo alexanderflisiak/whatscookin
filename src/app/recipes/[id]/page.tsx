@@ -101,7 +101,7 @@ export default function RecipeDetailPage() {
 
   return (
     <div className="pb-32 bg-background min-h-full relative">
-      <Link href="/" className="absolute top-4 left-4 z-20 w-10 h-10 bg-black/30 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors">
+      <Link href="/" aria-label="Go back" className="absolute top-4 left-4 z-20 w-10 h-10 bg-black/30 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-black/50 transition-colors">
         <ArrowLeft className="w-6 h-6" />
       </Link>
 
@@ -141,7 +141,7 @@ export default function RecipeDetailPage() {
               </div>
             </div>
           </div>
-          <Link href={`/recipes/${recipe.id}/edit`} className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center text-text-hi hover:bg-stone-200 transition-colors shrink-0">
+          <Link href={`/recipes/${recipe.id}/edit`} aria-label="Edit recipe" className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center text-text-hi hover:bg-stone-200 transition-colors shrink-0">
             <Pencil className="w-5 h-5" />
           </Link>
         </div>
@@ -163,7 +163,7 @@ export default function RecipeDetailPage() {
             {ingredients.map((ing) => {
               const isChecked = checkedItems.has(ing.ingredient_id)
               return (
-                <button key={ing.ingredient_id} onClick={() => toggleCheck(ing.ingredient_id)} className="w-full flex items-center gap-4 py-3 min-h-[48px] px-2 -mx-2 hover:bg-stone-100 rounded-md transition-colors group text-left">
+                <button key={ing.ingredient_id} onClick={() => toggleCheck(ing.ingredient_id)} role="checkbox" aria-checked={isChecked} className="w-full flex items-center gap-4 py-3 min-h-[48px] px-2 -mx-2 hover:bg-stone-100 rounded-md transition-colors group text-left">
                   <div className="shrink-0">
                     {isChecked ? <CheckCircle2 className="w-6 h-6 text-success fill-success/20 stroke-[1.5]" /> : <Circle className="w-6 h-6 text-stone-300 group-hover:text-text-hi stroke-[1.5] transition-colors" />}
                   </div>
