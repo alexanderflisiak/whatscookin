@@ -1,0 +1,3 @@
+## 2024-05-18 - Supabase N+1 Queries in Loops
+**Learning:** Found an N+1 query bottleneck in `RecipeForm.tsx` where it fetches and inserts ingredients one by one inside a loop. This drastically increases the total network latency for recipes with many ingredients. Supabase has native support for batched fetching (`.in()`) and batched inserts (array payloads with `.insert([])`).
+**Action:** Always avoid sequential database operations inside loops in this architecture. Batch fetch relational items and batch insert missing ones.
