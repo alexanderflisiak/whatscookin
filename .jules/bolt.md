@@ -1,0 +1,3 @@
+## 2024-03-24 - React.memo with useDeferredValue
+**Learning:** `useDeferredValue` alone only defers the re-render of the deferred value itself. If the parent component re-renders due to the original state updating (e.g., search input typing), child components in the list will still re-render unless they are wrapped in `React.memo`.
+**Action:** Always pair `useDeferredValue` on lists with `React.memo` on the child list items to prevent unnecessary re-renders during the intermediate state.
