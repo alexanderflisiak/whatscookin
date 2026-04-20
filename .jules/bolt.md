@@ -1,0 +1,3 @@
+## 2024-04-04 - Prevent N+1 Query Bottlenecks with Batched Supabase Operations
+**Learning:** Sequential database operations inside a loop (like querying and inserting individual ingredients when saving a recipe) cause N+1 query bottlenecks, significantly degrading performance by incurring multiple network round trips.
+**Action:** Always batch database requests using `.in()` to fetch multiple existing records and array payloads with `.insert([])` to create new records in a single query.
