@@ -117,24 +117,27 @@ export function CookModeOverlay({ title, instructions, onClose }: CookModeOverla
         <button 
           onClick={handlePrev}
           disabled={currentStep === 0}
-          className="h-20 bg-stone-200 rounded-md flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none hover:bg-stone-300 active:scale-95 transition-all text-stone-600 touch-none"
+          aria-label="Previous step"
+          className="h-20 bg-stone-200 rounded-md flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none hover:bg-stone-300 active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all text-stone-600 touch-none outline-none"
         >
-          <ChevronLeft className="w-10 h-10" />
+          <ChevronLeft className="w-10 h-10" aria-hidden="true" />
         </button>
         
         {isDone ? (
           <button 
             onClick={onClose}
-            className="h-20 bg-success text-white rounded-md flex items-center justify-center hover:bg-green-600 active:scale-95 transition-all font-bold text-2xl shadow-sm border border-border touch-none"
+            aria-label="Finish cooking"
+            className="h-20 bg-success text-white rounded-md flex items-center justify-center hover:bg-green-600 active:scale-95 focus-visible:ring-2 focus-visible:ring-success focus-visible:ring-offset-2 transition-all font-bold text-2xl shadow-sm border border-border touch-none outline-none"
           >
-            <Check className="w-8 h-8 mr-2" /> Done
+            <Check className="w-8 h-8 mr-2" aria-hidden="true" /> Done
           </button>
         ) : (
           <button 
             onClick={handleNext}
-            className="h-20 bg-primary text-white border border-border hover:bg-stone-800 rounded-md flex items-center justify-center active:scale-95 transition-all shadow-sm touch-none"
+            aria-label="Next step"
+            className="h-20 bg-primary text-white border border-border hover:bg-stone-800 rounded-md flex items-center justify-center active:scale-95 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all shadow-sm touch-none outline-none"
           >
-            <ChevronRight className="w-10 h-10" />
+            <ChevronRight className="w-10 h-10" aria-hidden="true" />
           </button>
         )}
       </div>
