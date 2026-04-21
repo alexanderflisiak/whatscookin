@@ -1,0 +1,3 @@
+## 2024-03-29 - Optimize Recipe Form Ingredient Saving
+**Learning:** In the `RecipeForm` component, saving a recipe iterated over the ingredients, executing individual database lookups and inserts per ingredient. This is a classic N+1 query issue which gets progressively worse with more ingredients.
+**Action:** Use Supabase's bulk operations feature. Instead of looping, gather all ingredient names, do a single `.in('name', names)` lookup to find existing ingredients, insert missing ones in one `.insert()` call, and finally batch insert all the relationships in another single `.insert()` array payload. This resolves the N+1 problem and brings the database queries from O(n) to O(1) in the number of ingredients.
