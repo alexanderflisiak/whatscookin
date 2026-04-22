@@ -1,7 +1,53 @@
 import { NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
+import dns from 'dns'
 
-function isUrlSafe(urlString: string): boolean {
+function isHostSafe(hostname: string): boolean {
+  // Strip brackets for IPv6
+  if (hostname.startsWith('[') && hostname.endsWith(']')) {
+    hostname = hostname.slice(1, -1)
+  }
+
+  // Block localhost and 0.0.0.0
+  if (hostname === 'localhost' || hostname === '0.0.0.0') return false
+
+  // Block IPv6 localhost and unspecified
+  if (hostname === '::1' || hostname === '::' || hostname === '0:0:0:0:0:0:0:0' || hostname === '0:0:0:0:0:0:0:1') return false
+
+  // Block private IP ranges (IPv4)
+  // 10.0.0.0 - 10.255.255.255
+  if (hostname.startsWith('10.')) return false
+  // 172.16.0.0 - 172.31.255.255
+  if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)) return false
+  // 192.168.0.0 - 192.168.255.255
+  if (hostname.startsWith('192.168.')) return false
+  // 127.0.0.0 - 127.255.255.255 (loopback)
+  if (hostname.startsWith('127.')) return false
+  // 169.254.0.0 - 169.254.255.255 (link-local)
+  if (hostname.startsWith('169.254.')) return false
+
+  // Block IPv6 Unique Local Addresses (fc00::/7) and Link-Local (fe80::/10)
+  if (/^(fc|fd|fe8|fe9|fea|feb)[0-9a-f]{0,2}:/i.test(hostname)) return false
+
+  // Block IPv4-mapped IPv6 addresses
+  const lowerHost = hostname.toLowerCase()
+  if (lowerHost.startsWith('::ffff:')) {
+    const mapped = lowerHost.slice(7)
+    if (mapped.startsWith('127.') || /^7f[0-9a-f]{2}:/i.test(mapped)) return false
+    if (mapped.startsWith('10.') || /^a[0-9a-f]{2}:/i.test(mapped)) return false
+    if (mapped.startsWith('192.168.') || /^c0a8:/i.test(mapped)) return false
+    if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(mapped) || /^ac1[0-9a-f]:/i.test(mapped)) return false
+    if (mapped.startsWith('169.254.') || /^a9fe:/i.test(mapped)) return false
+    if (mapped === '0.0.0.0' || mapped === '0' || mapped.startsWith('00')) return false
+  }
+
+  // Block internal domains
+  if (hostname.endsWith('.local') || hostname.endsWith('.internal')) return false
+
+  return true
+}
+
+async function isUrlSafe(urlString: string): Promise<boolean> {
   try {
     const parsedUrl = new URL(urlString)
 
@@ -12,50 +58,22 @@ function isUrlSafe(urlString: string): boolean {
 
     let hostname = parsedUrl.hostname
 
-    // Strip brackets for IPv6
-    if (hostname.startsWith('[') && hostname.endsWith(']')) {
-      hostname = hostname.slice(1, -1)
+    if (!isHostSafe(hostname)) return false
+
+    // Strip brackets for IPv6 for DNS lookup
+    let cleanHostname = hostname
+    if (cleanHostname.startsWith('[') && cleanHostname.endsWith(']')) {
+      cleanHostname = cleanHostname.slice(1, -1)
     }
 
-    // Block localhost and 0.0.0.0
-    if (hostname === 'localhost' || hostname === '0.0.0.0') return false
-
-    // Block IPv6 localhost and unspecified
-    if (hostname === '::1' || hostname === '::' || hostname === '0:0:0:0:0:0:0:0' || hostname === '0:0:0:0:0:0:0:1') return false
-
-    // Block private IP ranges (IPv4)
-    // 10.0.0.0 - 10.255.255.255
-    if (hostname.startsWith('10.')) return false
-    // 172.16.0.0 - 172.31.255.255
-    if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)) return false
-    // 192.168.0.0 - 192.168.255.255
-    if (hostname.startsWith('192.168.')) return false
-    // 127.0.0.0 - 127.255.255.255 (loopback)
-    if (hostname.startsWith('127.')) return false
-    // 169.254.0.0 - 169.254.255.255 (link-local)
-    if (hostname.startsWith('169.254.')) return false
-
-    // Block IPv6 Unique Local Addresses (fc00::/7) and Link-Local (fe80::/10)
-    if (/^(fc|fd|fe8|fe9|fea|feb)[0-9a-f]{0,2}:/i.test(hostname)) return false
-
-    // Block IPv4-mapped IPv6 addresses
-    const lowerHost = hostname.toLowerCase()
-    if (lowerHost.startsWith('::ffff:')) {
-      const mapped = lowerHost.slice(7)
-      if (mapped.startsWith('127.') || /^7f[0-9a-f]{2}:/i.test(mapped)) return false
-      if (mapped.startsWith('10.') || /^a[0-9a-f]{2}:/i.test(mapped)) return false
-      if (mapped.startsWith('192.168.') || /^c0a8:/i.test(mapped)) return false
-      if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(mapped) || /^ac1[0-9a-f]:/i.test(mapped)) return false
-      if (mapped.startsWith('169.254.') || /^a9fe:/i.test(mapped)) return false
-      if (mapped === '0.0.0.0' || mapped === '0' || mapped.startsWith('00')) return false
+    const lookupResults = await dns.promises.lookup(cleanHostname, { all: true })
+    for (const result of lookupResults) {
+      if (!isHostSafe(result.address)) return false
     }
-
-    // Block internal domains
-    if (hostname.endsWith('.local') || hostname.endsWith('.internal')) return false
 
     return true
   } catch {
-    return false // Invalid URL format
+    return false // Invalid URL format or DNS lookup failed
   }
 }
 
@@ -71,7 +89,7 @@ export async function POST(request: Request) {
     // Fetch loop to follow redirects securely
     for (let i = 0; i <= MAX_REDIRECTS; i++) {
       // SSRF Protection: Validate URL before fetching
-      if (!isUrlSafe(currentUrl)) {
+      if (!(await isUrlSafe(currentUrl))) {
         return NextResponse.json({ error: 'Invalid or forbidden URL' }, { status: 400 })
       }
 
