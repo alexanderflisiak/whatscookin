@@ -62,38 +62,10 @@ export function RecipeGrid() {
     return result
   }, [deferredSearch, recipes, fuse, isLazyFilter])
 
-  if (recipes.length === 0) {
-    const hasKeys = !!process.env.NEXT_PUBLIC_SUPABASE_URL
-    if (!hasKeys) {
-      return (
-        <div className="flex flex-col items-center justify-center p-6 mt-12 text-center">
-          <div className="w-20 h-20 bg-stone-50 rounded-full flex items-center justify-center mb-6">
-             <Search className="w-10 h-10 text-text-hi" />
-          </div>
-          <h2 className="text-2xl font-bold text-text-hi mb-2">Supabase Disconnected</h2>
-          <p className="text-text-lo mb-8 max-w-sm">Please add your NEXT_PUBLIC_SUPABASE_URL and ANON_KEY to your Vercel Environment Variables.</p>
-        </div>
-      )
-    }
+  // NOTE: For a11y testing, we ALWAYS show the search bar, even if empty state.
+  // We'll move it outside the early returns so it's always visible.
 
-    // Empty State / Onboarding View
-    return (
-      <div className="flex flex-col items-center justify-center p-6 mt-12 text-center">
-        <div className="w-20 h-20 bg-stone-50 rounded-full flex items-center justify-center mb-6">
-          <Search className="w-10 h-10 text-text-hi" />
-        </div>
-        <h2 className="text-2xl font-bold text-text-hi mb-2">Your kitchen, your rules.</h2>
-        <p className="text-text-lo mb-8 max-w-sm">Add your first recipe — paste a link or type it in.</p>
-        
-        <Link href="/recipes/new" className="bg-primary text-white border border-border hover:bg-stone-800 font-bold py-4 px-8 rounded-md shadow-sm border border-border transition-all flex items-center gap-2">
-          <Plus className="w-5 h-5" /> Add Recipe
-        </Link>
-        <p className="mt-8 text-sm text-text-lo font-medium flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-success animate-pulse inline-block" /> Shared Kitchen synced live
-        </p>
-      </div>
-    )
-  }
+  const hasKeys = !!process.env.NEXT_PUBLIC_SUPABASE_URL
 
   return (
     <>
@@ -103,6 +75,7 @@ export function RecipeGrid() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-lo" />
             <input 
               type="text" 
+              aria-label="Search recipes"
               placeholder="Search recipes..." 
               value={search}
               onChange={e => setSearch(e.target.value)}
@@ -112,29 +85,57 @@ export function RecipeGrid() {
           <button 
             onClick={() => setRandomizerOpen(true)}
             title="Surprise Me"
-            className="shrink-0 w-12 h-12 bg-white border border-border rounded-md flex items-center justify-center text-text-hi hover:bg-stone-50 transition-colors shadow-sm"
+            aria-label="Surprise Me Randomizer"
+            className="shrink-0 w-12 h-12 bg-white border border-border rounded-md flex items-center justify-center text-text-hi hover:bg-stone-50 focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:outline-none transition-colors shadow-sm"
           >
             <Dices className="w-6 h-6" />
           </button>
           <button 
             onClick={() => setIsLazyFilter(!isLazyFilter)}
             title="I'm Lazy Mode"
-            className={`shrink-0 w-12 h-12 border border-border rounded-md flex items-center justify-center transition-colors shadow-sm ${
+            aria-label="I'm Lazy Mode Filter"
+            aria-pressed={isLazyFilter}
+            className={`shrink-0 w-12 h-12 border border-border rounded-md flex items-center justify-center focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:outline-none transition-colors shadow-sm ${
               isLazyFilter ? 'bg-orange-100 text-orange-800 border-orange-200 shadow-inner' : 'bg-white text-text-hi hover:bg-stone-50'
             }`}
           >
             <Coffee className="w-6 h-6" />
           </button>
         </div>
-        
-        {/* Placeholder for Tags Filter Bar */}
       </div>
 
-      <div className="px-4 py-4 grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {filteredRecipes.map(recipe => (
-          <RecipeCard key={recipe.id} recipe={recipe} />
-        ))}
-      </div>
+      {recipes.length === 0 ? (
+        !hasKeys ? (
+          <div className="flex flex-col items-center justify-center p-6 mt-12 text-center">
+            <div className="w-20 h-20 bg-stone-50 rounded-full flex items-center justify-center mb-6">
+               <Search className="w-10 h-10 text-text-hi" />
+            </div>
+            <h2 className="text-2xl font-bold text-text-hi mb-2">Supabase Disconnected</h2>
+            <p className="text-text-lo mb-8 max-w-sm">Please add your NEXT_PUBLIC_SUPABASE_URL and ANON_KEY to your Vercel Environment Variables.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center p-6 mt-12 text-center">
+            <div className="w-20 h-20 bg-stone-50 rounded-full flex items-center justify-center mb-6">
+              <Search className="w-10 h-10 text-text-hi" />
+            </div>
+            <h2 className="text-2xl font-bold text-text-hi mb-2">Your kitchen, your rules.</h2>
+            <p className="text-text-lo mb-8 max-w-sm">Add your first recipe — paste a link or type it in.</p>
+
+            <Link href="/recipes/new" className="bg-primary text-white border border-border hover:bg-stone-800 font-bold py-4 px-8 rounded-md shadow-sm border border-border transition-all flex items-center gap-2">
+              <Plus className="w-5 h-5" /> Add Recipe
+            </Link>
+            <p className="mt-8 text-sm text-text-lo font-medium flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-success animate-pulse inline-block" /> Shared Kitchen synced live
+            </p>
+          </div>
+        )
+      ) : (
+        <div className="px-4 py-4 grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {filteredRecipes.map(recipe => (
+            <RecipeCard key={recipe.id} recipe={recipe} />
+          ))}
+        </div>
+      )}
 
       <RandomizerModal isOpen={isRandomizerOpen} onClose={() => setRandomizerOpen(false)} />
     </>
