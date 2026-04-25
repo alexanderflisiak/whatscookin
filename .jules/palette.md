@@ -1,0 +1,3 @@
+## 2025-04-25 - Icon-only Buttons Accessibility
+**Learning:** Icon-only buttons (like "Surprise Me" and "I'm Lazy Mode" in RecipeGrid) fail to communicate their purpose to assistive technologies. Additionally, toggle buttons ("I'm Lazy Mode") need `aria-pressed` to convey state.
+**Action:** Always add descriptive `aria-label`s to icon-only interactive elements. Use `aria-pressed={state}` for toggles. Apply standard focus styles (`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400`) to ensure keyboard navigators can see their current position.
