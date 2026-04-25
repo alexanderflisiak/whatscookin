@@ -1,0 +1,3 @@
+## 2025-04-25 - React.memo with useDeferredValue
+**Learning:** When using `useDeferredValue` to prevent a parent component (like `RecipeGrid`) from blocking the main thread during typing, the optimization is incomplete if the child components (like `RecipeCard`) are not memoized. Even with `useDeferredValue`, the parent's re-render will still trigger synchronous re-renders of all children unless they are wrapped in `React.memo`.
+**Action:** Always pair `useDeferredValue` on lists/grids with `React.memo` on the child list items to actually realize the performance benefits and prevent cascading re-renders.
