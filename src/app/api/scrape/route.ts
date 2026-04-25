@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
+import dns from 'dns/promises'
 
-function isUrlSafe(urlString: string): boolean {
+async function isUrlSafe(urlString: string): Promise<string | null> {
   try {
     const parsedUrl = new URL(urlString)
 
     // Only allow HTTP and HTTPS protocols
     if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
-      return false
+      return null
     }
 
     let hostname = parsedUrl.hostname
@@ -17,45 +18,69 @@ function isUrlSafe(urlString: string): boolean {
       hostname = hostname.slice(1, -1)
     }
 
-    // Block localhost and 0.0.0.0
-    if (hostname === 'localhost' || hostname === '0.0.0.0') return false
+    // Block internal domains
+    if (hostname.endsWith('.local') || hostname.endsWith('.internal')) return null
 
-    // Block IPv6 localhost and unspecified
-    if (hostname === '::1' || hostname === '::' || hostname === '0:0:0:0:0:0:0:0' || hostname === '0:0:0:0:0:0:0:1') return false
+    let ipsToValidate = [hostname]
+    let resolvedIp = hostname
 
-    // Block private IP ranges (IPv4)
-    // 10.0.0.0 - 10.255.255.255
-    if (hostname.startsWith('10.')) return false
-    // 172.16.0.0 - 172.31.255.255
-    if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)) return false
-    // 192.168.0.0 - 192.168.255.255
-    if (hostname.startsWith('192.168.')) return false
-    // 127.0.0.0 - 127.255.255.255 (loopback)
-    if (hostname.startsWith('127.')) return false
-    // 169.254.0.0 - 169.254.255.255 (link-local)
-    if (hostname.startsWith('169.254.')) return false
-
-    // Block IPv6 Unique Local Addresses (fc00::/7) and Link-Local (fe80::/10)
-    if (/^(fc|fd|fe8|fe9|fea|feb)[0-9a-f]{0,2}:/i.test(hostname)) return false
-
-    // Block IPv4-mapped IPv6 addresses
-    const lowerHost = hostname.toLowerCase()
-    if (lowerHost.startsWith('::ffff:')) {
-      const mapped = lowerHost.slice(7)
-      if (mapped.startsWith('127.') || /^7f[0-9a-f]{2}:/i.test(mapped)) return false
-      if (mapped.startsWith('10.') || /^a[0-9a-f]{2}:/i.test(mapped)) return false
-      if (mapped.startsWith('192.168.') || /^c0a8:/i.test(mapped)) return false
-      if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(mapped) || /^ac1[0-9a-f]:/i.test(mapped)) return false
-      if (mapped.startsWith('169.254.') || /^a9fe:/i.test(mapped)) return false
-      if (mapped === '0.0.0.0' || mapped === '0' || mapped.startsWith('00')) return false
+    // Resolve DNS to prevent DNS Rebinding SSRF
+    // In Node.js, we must resolve IP and return it to prevent TOCTOU attack
+    // where the DNS resolution could change between our check and actual fetch
+    try {
+      // dns.lookup returns the first IP in IPv4 or IPv6
+      const address = await dns.lookup(hostname)
+      if (address && address.address) {
+        resolvedIp = address.address
+        ipsToValidate.push(address.address)
+      }
+    } catch {
+      // Fail secure - if DNS resolution fails, block the request
+      return null
     }
 
-    // Block internal domains
-    if (hostname.endsWith('.local') || hostname.endsWith('.internal')) return false
+    for (const hostToValidate of ipsToValidate) {
+      // Block localhost and 0.0.0.0
+      if (hostToValidate === 'localhost' || hostToValidate === '0.0.0.0') return null
 
-    return true
+      // Block IPv6 localhost and unspecified
+      if (hostToValidate === '::1' || hostToValidate === '::' || hostToValidate === '0:0:0:0:0:0:0:0' || hostToValidate === '0:0:0:0:0:0:0:1') return null
+
+      // Block private IP ranges (IPv4)
+      // 10.0.0.0 - 10.255.255.255
+      if (hostToValidate.startsWith('10.')) return null
+      // 172.16.0.0 - 172.31.255.255
+      if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostToValidate)) return null
+      // 192.168.0.0 - 192.168.255.255
+      if (hostToValidate.startsWith('192.168.')) return null
+      // 127.0.0.0 - 127.255.255.255 (loopback)
+      if (hostToValidate.startsWith('127.')) return null
+      // 169.254.0.0 - 169.254.255.255 (link-local)
+      if (hostToValidate.startsWith('169.254.')) return null
+
+      // Block IPv6 Unique Local Addresses (fc00::/7) and Link-Local (fe80::/10)
+      if (/^(fc|fd|fe8|fe9|fea|feb)[0-9a-f]{0,2}:/i.test(hostToValidate)) return null
+
+      // Block IPv4-mapped IPv6 addresses
+      const lowerHost = hostToValidate.toLowerCase()
+      if (lowerHost.startsWith('::ffff:')) {
+        const mapped = lowerHost.slice(7)
+        if (mapped.startsWith('127.') || /^7f[0-9a-f]{2}:/i.test(mapped)) return null
+        if (mapped.startsWith('10.') || /^a[0-9a-f]{2}:/i.test(mapped)) return null
+        if (mapped.startsWith('192.168.') || /^c0a8:/i.test(mapped)) return null
+        if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(mapped) || /^ac1[0-9a-f]:/i.test(mapped)) return null
+        if (mapped.startsWith('169.254.') || /^a9fe:/i.test(mapped)) return null
+        if (mapped === '0.0.0.0' || mapped === '0' || mapped.startsWith('00')) return null
+      }
+    }
+
+    // Return the safe resolved IP to prevent TOCTOU during fetch
+    if (resolvedIp.includes(':')) {
+      return `[${resolvedIp}]`
+    }
+    return resolvedIp
   } catch {
-    return false // Invalid URL format
+    return null // Invalid URL format
   }
 }
 
@@ -71,13 +96,18 @@ export async function POST(request: Request) {
     // Fetch loop to follow redirects securely
     for (let i = 0; i <= MAX_REDIRECTS; i++) {
       // SSRF Protection: Validate URL before fetching
-      if (!isUrlSafe(currentUrl)) {
+      const safeIp = await isUrlSafe(currentUrl)
+      if (!safeIp) {
         return NextResponse.json({ error: 'Invalid or forbidden URL' }, { status: 400 })
       }
 
-      response = await fetch(currentUrl, {
+      const urlObj = new URL(currentUrl)
+      const fetchUrl = `${urlObj.protocol}//${safeIp}${urlObj.port ? `:${urlObj.port}` : ''}${urlObj.pathname}${urlObj.search}`
+
+      response = await fetch(fetchUrl, {
         redirect: 'manual', // Prevent automatic following to intercept and validate Location
         headers: {
+          'Host': urlObj.hostname, // Maintain original hostname for Virtual Hosting
           'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
         },
