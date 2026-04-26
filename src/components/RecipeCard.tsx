@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Clock } from 'lucide-react'
@@ -7,7 +8,9 @@ type RecipeCardProps = {
   recipe: Recipe
 }
 
-export function RecipeCard({ recipe }: RecipeCardProps) {
+// ⚡ Bolt: Memoize RecipeCard so it doesn't re-render when RecipeGrid re-renders (due to search input updates or other state changes).
+// This is essential for useDeferredValue in RecipeGrid to actually work and prevent typing lag.
+export const RecipeCard = memo(function RecipeCard({ recipe }: RecipeCardProps) {
   // If we have an image_path, it's relative to the Supabase storage bucket 'recipe-images'
   const imageUrl = recipe.image_path 
     ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/recipe-images/${recipe.image_path}`
@@ -58,4 +61,4 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
       </div>
     </Link>
   )
-}
+})
