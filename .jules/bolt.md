@@ -1,0 +1,3 @@
+## 2026-04-26 - React.memo with useDeferredValue
+**Learning:** `useDeferredValue` defers a state update and its associated render pass. However, when the original state (e.g. search input) updates, the parent component still re-renders synchronously. If child components in the list are not wrapped in `React.memo`, they will still re-render on every keystroke, defeating the purpose of `useDeferredValue`.
+**Action:** Always pair `useDeferredValue` with `React.memo` on the child components that render the large list or expensive UI.
