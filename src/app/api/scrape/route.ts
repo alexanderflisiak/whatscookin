@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
+import dns from 'dns'
+import { Agent, fetch as undiciFetch } from 'undici'
 
 function isUrlSafe(urlString: string): boolean {
   try {
@@ -65,8 +67,31 @@ export async function POST(request: Request) {
     if (!url) return NextResponse.json({ error: 'URL is required' }, { status: 400 })
 
     let currentUrl = url
-    let response: Response | null = null
+    let response: any = null
     const MAX_REDIRECTS = 5
+
+    const agent = new Agent({
+      connect: {
+        lookup: (hostname, options, callback) => {
+          dns.lookup(hostname, { all: true }, (err, addresses) => {
+            if (err) return callback(err, []);
+            if (!addresses || addresses.length === 0) return callback(new Error('DNS resolution failed'), []);
+
+            // Validate all resolved IPs
+            const validAddresses = addresses.filter(a => {
+              const ipUrlStr = a.family === 6 ? `http://[${a.address}]` : `http://${a.address}`;
+              return isUrlSafe(ipUrlStr);
+            });
+
+            if (validAddresses.length === 0) {
+              return callback(new Error('Invalid or forbidden resolved IP'), []);
+            }
+
+            callback(null, validAddresses.map(a => ({ address: a.address, family: a.family })));
+          });
+        }
+      }
+    });
 
     // Fetch loop to follow redirects securely
     for (let i = 0; i <= MAX_REDIRECTS; i++) {
@@ -75,13 +100,21 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Invalid or forbidden URL' }, { status: 400 })
       }
 
-      response = await fetch(currentUrl, {
-        redirect: 'manual', // Prevent automatic following to intercept and validate Location
-        headers: {
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-        },
-      })
+      try {
+        response = await undiciFetch(currentUrl, {
+          dispatcher: agent,
+          redirect: 'manual', // Prevent automatic following to intercept and validate Location
+          headers: {
+            'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+          },
+        })
+      } catch (fetchError: any) {
+        if (fetchError.message === 'Invalid or forbidden resolved IP') {
+          return NextResponse.json({ error: fetchError.message }, { status: 400 });
+        }
+        throw fetchError;
+      }
 
       // If it's a redirect, get the Location header and continue loop
       if (response.status >= 300 && response.status < 400) {
