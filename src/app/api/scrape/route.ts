@@ -1,5 +1,44 @@
 import { NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
+import { fetch as undiciFetch, Agent } from 'undici'
+import * as dns from 'node:dns'
+
+function isIpSafe(ip: string): boolean {
+  if (ip === '0.0.0.0' || ip === '::' || ip === '::1') return false
+  if (ip.startsWith('127.') || ip.startsWith('10.') || ip.startsWith('192.168.') || ip.startsWith('169.254.')) return false
+  if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(ip)) return false
+  if (/^(fc|fd|fe8|fe9|fea|feb)[0-9a-f]{0,2}:/i.test(ip)) return false
+
+  // Check IPv4-mapped IPv6
+  const lowerIp = ip.toLowerCase()
+  if (lowerIp.startsWith('::ffff:')) {
+    const mapped = lowerIp.slice(7)
+    if (mapped === '0.0.0.0' || mapped === '127.0.0.1' || mapped.startsWith('127.') || mapped.startsWith('10.') || mapped.startsWith('192.168.') || mapped.startsWith('169.254.')) return false
+    if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(mapped)) return false
+    if (/^7f[0-9a-f]{2}:/i.test(mapped) || /^a[0-9a-f]{2}:/i.test(mapped) || /^c0a8:/i.test(mapped) || /^ac1[0-9a-f]:/i.test(mapped) || /^a9fe:/i.test(mapped)) return false
+  }
+  return true
+}
+
+const ssrfSafeAgent = new Agent({
+  connect: {
+    lookup: (hostname, options, callback) => {
+      dns.lookup(hostname, { ...options, all: true }, (err, addresses) => {
+        if (err) return callback(err, [])
+        for (const addr of addresses) {
+          if (!isIpSafe(addr.address)) {
+            return callback(new Error('Forbidden IP resolved'), [])
+          }
+        }
+        if (options.all) {
+          callback(null, addresses as any)
+        } else {
+          callback(null, addresses[0].address as any, addresses[0].family as any)
+        }
+      })
+    }
+  }
+})
 
 function isUrlSafe(urlString: string): boolean {
   try {
@@ -75,13 +114,14 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Invalid or forbidden URL' }, { status: 400 })
       }
 
-      response = await fetch(currentUrl, {
+      response = (await undiciFetch(currentUrl, {
+        dispatcher: ssrfSafeAgent,
         redirect: 'manual', // Prevent automatic following to intercept and validate Location
         headers: {
           'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
         },
-      })
+      })) as unknown as Response
 
       // If it's a redirect, get the Location header and continue loop
       if (response.status >= 300 && response.status < 400) {
