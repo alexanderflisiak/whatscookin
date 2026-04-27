@@ -271,7 +271,8 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
                 <button 
                   type="button" 
                   onClick={() => remove(index)}
-                  className="p-2 text-text-lo hover:text-danger hover:bg-red-50 rounded-lg transition-colors mt-0.5 shrink-0"
+                  aria-label="Remove ingredient"
+                  className="p-2 text-text-lo hover:text-danger hover:bg-red-50 rounded-lg transition-colors mt-0.5 shrink-0 focus-visible:ring-2 focus-visible:ring-red-400 outline-none"
                 >
                   <Trash2 className="w-5 h-5" />
                 </button>
