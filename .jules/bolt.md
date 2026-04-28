@@ -1,0 +1,3 @@
+## 2024-04-28 - useDeferredValue Requires React.memo()
+**Learning:** When using `useDeferredValue` to defer expensive UI updates (like list filtering during search typing in `RecipeGrid`), it MUST be paired with `React.memo` on the child components being rendered (like `RecipeCard`). `useDeferredValue` alone does not prevent children from re-rendering when the parent re-renders due to the original state updating. If a parent updates its state (e.g. typing in search), it re-renders, and all child components re-render synchronously unless memoized, completely defeating the purpose of `useDeferredValue`.
+**Action:** Whenever introducing `useDeferredValue` in a parent component to optimize a list, always ensure the list item components are wrapped in `React.memo()`.
