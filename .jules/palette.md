@@ -1,0 +1,3 @@
+## 2023-11-09 - Accessible Icon-only Toggle Buttons
+**Learning:** Icon-only buttons used for toggling state (like "Lazy Mode") require `aria-pressed={state}` to correctly announce their active/inactive state to screen readers. They also must provide clear visual feedback during keyboard navigation, which can be accomplished by appending `focus:outline-none focus-visible:ring-2` styles.
+**Action:** Always pair `aria-pressed` with `focus-visible` ring styles when implementing icon-only toggle buttons across the application.
