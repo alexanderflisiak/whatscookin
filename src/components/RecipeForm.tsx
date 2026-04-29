@@ -134,7 +134,7 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
         const ingName = ing.name.trim().toLowerCase()
         
         // Find or create ingredient
-        let { data: existingIng } = await supabase.from('ingredients').select('id').eq('name', ingName).single()
+        const { data: existingIng } = await supabase.from('ingredients').select('id').eq('name', ingName).single()
         let ingredientId = existingIng?.id
 
         if (!ingredientId) {

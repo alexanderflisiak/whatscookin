@@ -1,0 +1,3 @@
+## 2024-05-18 - Accessible Icon-Only Toggle Buttons
+**Learning:** Icon-only buttons used as toggles (e.g., "Lazy Mode" filter in the recipe grid) must convey their active state to screen readers, as visual color changes alone are insufficient. Additionally, these buttons need explicit `aria-label`s when no visible text is present.
+**Action:** When creating icon-only interactive toggle elements, always add a descriptive `aria-label`, apply `aria-pressed={state}` to convey the active/toggled state, and include standard focus styles like `focus-visible:ring-2` paired with `focus-visible:outline-none` for clear keyboard navigation feedback.
