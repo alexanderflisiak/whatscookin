@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
+import { fetch as undiciFetch, Agent } from 'undici'
+import dns from 'dns'
 
 function isUrlSafe(urlString: string): boolean {
   try {
@@ -59,6 +61,26 @@ function isUrlSafe(urlString: string): boolean {
   }
 }
 
+
+const safeAgent = new Agent({
+  connect: {
+    lookup: (hostname, options, callback) => {
+      dns.lookup(hostname, { all: true }, (err, addresses) => {
+        if (err) return callback(err, []);
+        for (const addr of addresses) {
+          const ip = typeof addr === 'string' ? addr : addr.address;
+          // Reuse our existing isUrlSafe but for IPs. isUrlSafe takes a full URL so we adapt it.
+          // Or just write a small IP check
+          if (!isUrlSafe('http://' + (ip.includes(':') ? '[' + ip + ']' : ip))) {
+            return callback(new Error(`Forbidden IP resolved for ${hostname}`), []);
+          }
+        }
+        callback(null, addresses as dns.LookupAddress[]);
+      });
+    }
+  }
+})
+
 export async function POST(request: Request) {
   try {
     const { url } = await request.json()
@@ -75,13 +97,15 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Invalid or forbidden URL' }, { status: 400 })
       }
 
-      response = await fetch(currentUrl, {
+      response = (await undiciFetch(currentUrl, {
+        dispatcher: safeAgent,
         redirect: 'manual', // Prevent automatic following to intercept and validate Location
         headers: {
           'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
         },
-      })
+      })) as unknown as Response
+
 
       // If it's a redirect, get the Location header and continue loop
       if (response.status >= 300 && response.status < 400) {
@@ -188,6 +212,7 @@ export async function POST(request: Request) {
       $('[class*="instruction"] li, [class*="Instruction"] li, [class*="step"] p').each((_, el) => {
         instructionsList.push($(el).text().trim().replace(/\\s+/g, ' '))
       })
+
 
       const image_url = $('meta[property="og:image"]').attr('content') || null
 
