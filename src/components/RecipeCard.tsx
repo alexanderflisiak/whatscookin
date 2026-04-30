@@ -1,3 +1,4 @@
+import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Clock } from 'lucide-react'
@@ -7,7 +8,11 @@ type RecipeCardProps = {
   recipe: Recipe
 }
 
-export function RecipeCard({ recipe }: RecipeCardProps) {
+// ⚡ Bolt: Wrap RecipeCard in React.memo() to prevent unnecessary re-renders.
+// The parent (RecipeGrid) uses useDeferredValue for the search input. Without React.memo,
+// the fast state updates of `search` on every keystroke cause synchronous re-renders of all
+// child components, completely bypassing the deferral optimization.
+export const RecipeCard = React.memo(function RecipeCard({ recipe }: RecipeCardProps) {
   // If we have an image_path, it's relative to the Supabase storage bucket 'recipe-images'
   const imageUrl = recipe.image_path 
     ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/recipe-images/${recipe.image_path}`
@@ -58,4 +63,4 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
       </div>
     </Link>
   )
-}
+})
