@@ -4,7 +4,7 @@ import React from 'react'
 import { useTimers } from '@/lib/TimerContext'
 import { Clock } from 'lucide-react'
 
-const TIME_REGEX = /(\d+(?:\.\d+)?)\s*(?:-|to)?\s*(\d+(?:\.\d+)?)?\s*(m|min|mins|minutes|h|hr|hrs|hours|s|sec|secs|seconds)\b/gi
+const TIME_REGEX = /(\d+(?:\.\d+)?)(?:\s*(?:-|to)\s*(\d+(?:\.\d+)?))?\s*(m|min|mins|minutes|h|hr|hrs|hours|s|sec|secs|seconds)\b/gi
 
 export function InstructionParser({ text }: { text: string }) {
   const { addTimer } = useTimers()
@@ -15,10 +15,10 @@ export function InstructionParser({ text }: { text: string }) {
   let lastIndex = 0
   let match
   
-  // reset regex state just in case
-  TIME_REGEX.lastIndex = 0
+  // Clone regex to avoid mutating global state and triggering lint errors
+  const regex = new RegExp(TIME_REGEX)
 
-  while ((match = TIME_REGEX.exec(text)) !== null) {
+  while ((match = regex.exec(text)) !== null) {
     const fullMatch = match[0]
     const num1 = parseFloat(match[1])
     const num2 = match[2] ? parseFloat(match[2]) : null
@@ -51,7 +51,7 @@ export function InstructionParser({ text }: { text: string }) {
       </button>
     )
 
-    lastIndex = TIME_REGEX.lastIndex
+    lastIndex = regex.lastIndex
   }
 
   // Push remaining text
