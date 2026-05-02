@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Clock } from 'lucide-react'
@@ -7,7 +8,10 @@ type RecipeCardProps = {
   recipe: Recipe
 }
 
-export function RecipeCard({ recipe }: RecipeCardProps) {
+// ⚡ Bolt: Wrapped RecipeCard in memo to prevent unnecessary re-renders when RecipeGrid's
+// non-deferred state updates (like typing in the search box). Since deferredSearch is used
+// for the actual filtering, memoizing children ensures they don't re-render on every keystroke.
+export const RecipeCard = memo(function RecipeCard({ recipe }: RecipeCardProps) {
   // If we have an image_path, it's relative to the Supabase storage bucket 'recipe-images'
   const imageUrl = recipe.image_path 
     ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/recipe-images/${recipe.image_path}`
@@ -58,4 +62,4 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
       </div>
     </Link>
   )
-}
+})
