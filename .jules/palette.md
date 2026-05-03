@@ -1,0 +1,3 @@
+## 2024-05-03 - Accessible Icon-Only Toggle Buttons in Filter Bars
+**Learning:** Icon-only interactive elements in filter bars (like "Surprise Me" or "Lazy Mode" toggles) lack intrinsic meaning for screen readers and often omit clear active states.
+**Action:** Always provide descriptive `aria-label`s for icon-only buttons, use `aria-hidden="true"` on the decorative icons within them, and implement `aria-pressed={state}` for any toggle buttons to clearly convey their active status. Enhance keyboard navigation with explicit focus states like `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-300`.
