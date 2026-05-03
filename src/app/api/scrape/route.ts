@@ -1,5 +1,40 @@
 import { NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
+import { fetch as undiciFetch, Agent } from 'undici'
+import dns from 'dns'
+
+const blocklist = [
+  /^127\./,
+  /^10\./,
+  /^172\.(1[6-9]|2[0-9]|3[0-1])\./,
+  /^192\.168\./,
+  /^169\.254\./,
+  /^0\./,
+];
+
+function isIpBlocked(ip: string) {
+  if (ip === '::1' || ip === '::') return true;
+  if (ip.startsWith('fe80:') || ip.startsWith('fc00:') || ip.startsWith('fd00:')) return true;
+  return blocklist.some(regex => regex.test(ip));
+}
+
+const safeDispatcher = new Agent({
+  connect: {
+    lookup: (hostname, options, callback) => {
+      dns.lookup(hostname, { all: true, ...options }, (err, addresses) => {
+        if (err) return callback(err, []);
+        for (const addr of addresses) {
+          const ip = typeof addr === 'string' ? addr : addr.address;
+          if (isIpBlocked(ip)) {
+            return callback(new Error(`Blocked IP: ${ip}`), []);
+          }
+        }
+        callback(null, addresses as dns.LookupAddress[]);
+      });
+    }
+  }
+});
+
 
 function isUrlSafe(urlString: string): boolean {
   try {
@@ -75,13 +110,14 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Invalid or forbidden URL' }, { status: 400 })
       }
 
-      response = await fetch(currentUrl, {
+      response = (await undiciFetch(currentUrl, {
+        dispatcher: safeDispatcher,
         redirect: 'manual', // Prevent automatic following to intercept and validate Location
         headers: {
           'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
         },
-      })
+      })) as unknown as Response
 
       // If it's a redirect, get the Location header and continue loop
       if (response.status >= 300 && response.status < 400) {
