@@ -1,0 +1,3 @@
+## 2024-05-24 - Accessibility and Focus Management
+**Learning:** Icon-only interactive elements lacking labels make applications inaccessible to screen readers, and buttons lacking visual focus states are confusing for keyboard navigation. Additionally, toggle buttons specifically need `aria-pressed` states.
+**Action:** Always use descriptive `aria-label`s for icon-only components. Apply `aria-pressed={state}` to convey active/inactive toggle state changes. Consistently pair standard focus styles (e.g. `focus-visible:ring-2 focus-visible:ring-stone-400 outline-none`) to provide clear visual cues during keyboard interaction.
