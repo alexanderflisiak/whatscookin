@@ -4,7 +4,7 @@ import React from 'react'
 import { useTimers } from '@/lib/TimerContext'
 import { Clock } from 'lucide-react'
 
-const TIME_REGEX = /(\d+(?:\.\d+)?)\s*(?:-|to)?\s*(\d+(?:\.\d+)?)?\s*(m|min|mins|minutes|h|hr|hrs|hours|s|sec|secs|seconds)\b/gi
+const TIME_REGEX = /(\d+(?:\.\d+)?)(?:\s*(?:-|to)\s*(\d+(?:\.\d+)?))?\s*(m|min|mins|minutes|h|hr|hrs|hours|s|sec|secs|seconds)\b/gi
 
 export function InstructionParser({ text }: { text: string }) {
   const { addTimer } = useTimers()
