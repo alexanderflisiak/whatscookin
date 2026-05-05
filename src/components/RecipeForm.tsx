@@ -129,26 +129,64 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
         await supabase.from('recipe_ingredients').delete().eq('recipe_id', recipeId)
       }
 
-      for (const ing of data.ingredients) {
-        if (!ing.name) continue
-        const ingName = ing.name.trim().toLowerCase()
-        
-        // Find or create ingredient
-        let { data: existingIng } = await supabase.from('ingredients').select('id').eq('name', ingName).single()
-        let ingredientId = existingIng?.id
+      // ⚡ Bolt: Batch ingredient fetching and creation to avoid N+1 queries
+      const validIngredients = data.ingredients
+        .filter(ing => ing.name && ing.name.trim() !== '')
+        .map(ing => ({
+          ...ing,
+          normalizedName: ing.name.trim().toLowerCase()
+        }))
 
-        if (!ingredientId) {
-          const { data: newIng, error: newIngErr } = await supabase.from('ingredients').insert({ name: ingName }).select('id').single()
-          if (!newIngErr && newIng) ingredientId = newIng.id
+      if (validIngredients.length > 0) {
+        const uniqueNames = [...new Set(validIngredients.map(ing => ing.normalizedName))]
+
+        // Fetch all existing ingredients in one query
+        const { data: existingIngs } = await supabase
+          .from('ingredients')
+          .select('id, name')
+          .in('name', uniqueNames)
+
+        const existingNameMap = new Map((existingIngs || []).map(ing => [ing.name, ing.id]))
+
+        // Identify missing ingredients
+        const missingNames = uniqueNames.filter(name => !existingNameMap.has(name))
+
+        let newIngs: { id: string, name: string }[] = []
+        if (missingNames.length > 0) {
+          // Insert missing ingredients in batch
+          const { data: insertedIngs, error: insertErr } = await supabase
+            .from('ingredients')
+            .insert(missingNames.map(name => ({ name })))
+            .select('id, name')
+
+          if (!insertErr && insertedIngs) {
+            newIngs = insertedIngs
+          }
         }
 
-        if (ingredientId) {
-          await supabase.from('recipe_ingredients').insert({
-            recipe_id: recipeId,
-            ingredient_id: ingredientId,
-            amount: ing.amount || null,
-            unit: ing.unit || null
+        const allIngsMap = new Map([
+          ...Array.from(existingNameMap.entries()),
+          ...newIngs.map(ing => [ing.name, ing.id] as [string, string])
+        ])
+
+        // Create bridge payloads
+        const bridgePayloads = validIngredients
+          .map(ing => {
+            const ingredientId = allIngsMap.get(ing.normalizedName)
+            if (!ingredientId) return null
+
+            return {
+              recipe_id: recipeId,
+              ingredient_id: ingredientId,
+              amount: ing.amount || null,
+              unit: ing.unit || null
+            }
           })
+          .filter(Boolean)
+
+        // Insert bridge records in batch
+        if (bridgePayloads.length > 0) {
+          await supabase.from('recipe_ingredients').insert(bridgePayloads)
         }
       }
 
