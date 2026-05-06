@@ -1,0 +1,3 @@
+## 2026-05-06 - Prevent Synchronous Child Renders with useDeferredValue
+**Learning:** When using `useDeferredValue` to defer state updates in a parent component (like for search filtering), the deferral is ineffective if the child components rendering the list are not wrapped in `React.memo`. The parent still re-renders synchronously when the original state updates, causing all un-memoized children to synchronously re-render as well.
+**Action:** Always pair `useDeferredValue` with `React.memo` on the components consuming the deferred list to actually gain the intended performance benefits and prevent main-thread blocking.
