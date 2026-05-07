@@ -112,14 +112,17 @@ export function RecipeGrid() {
           <button 
             onClick={() => setRandomizerOpen(true)}
             title="Surprise Me"
-            className="shrink-0 w-12 h-12 bg-white border border-border rounded-md flex items-center justify-center text-text-hi hover:bg-stone-50 transition-colors shadow-sm"
+            aria-label="Surprise me"
+            className="shrink-0 w-12 h-12 bg-white border border-border rounded-md flex items-center justify-center text-text-hi hover:bg-stone-50 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-300"
           >
             <Dices className="w-6 h-6" />
           </button>
           <button 
             onClick={() => setIsLazyFilter(!isLazyFilter)}
             title="I'm Lazy Mode"
-            className={`shrink-0 w-12 h-12 border border-border rounded-md flex items-center justify-center transition-colors shadow-sm ${
+            aria-label="Toggle lazy mode"
+            aria-pressed={isLazyFilter}
+            className={`shrink-0 w-12 h-12 border border-border rounded-md flex items-center justify-center transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-300 ${
               isLazyFilter ? 'bg-orange-100 text-orange-800 border-orange-200 shadow-inner' : 'bg-white text-text-hi hover:bg-stone-50'
             }`}
           >
