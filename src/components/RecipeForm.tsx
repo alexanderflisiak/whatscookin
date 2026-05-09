@@ -109,7 +109,12 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
 
       // Handle Image Upload
       if (imageFile) {
-        const fileExt = imageFile.name.split('.').pop()
+        const allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'gif']
+        const fileExt = imageFile.name.split('.').pop()?.toLowerCase()
+        if (!fileExt || !allowedExts.includes(fileExt)) {
+          throw new Error('Invalid file type. Please upload a valid image file.')
+        }
+
         const fileName = `${recipeId}/${Date.now()}.${fileExt}`
         
         const { error: uploadError } = await supabase.storage
@@ -229,6 +234,15 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
               onChange={(e) => {
                 const file = e.target.files?.[0]
                 if (file) {
+                  const allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'gif']
+                  const fileExt = file.name.split('.').pop()?.toLowerCase()
+                  if (!fileExt || !allowedExts.includes(fileExt)) {
+                    setErrorMsg('Invalid file type. Please upload a valid image file.')
+                    e.target.value = ''
+                    setImageFile(null)
+                    setPreviewUrl(null)
+                    return
+                  }
                   setImageFile(file)
                   setPreviewUrl(URL.createObjectURL(file))
                 }
