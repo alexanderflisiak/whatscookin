@@ -1,0 +1,3 @@
+## 2024-05-10 - Deferred value + React.memo
+**Learning:** When using `useDeferredValue` to avoid blocking the main thread during high-frequency updates (like text inputs triggering fuzzy searches), child components receiving the deferred state *must* be wrapped in `React.memo()`. Otherwise, the React framework will still trigger re-renders on the child components whenever the parent's non-deferred state updates, effectively bypassing the optimization of `useDeferredValue`.
+**Action:** Always pair `useDeferredValue` with `React.memo` for the components rendering the deferred state to ensure true performance gains.
