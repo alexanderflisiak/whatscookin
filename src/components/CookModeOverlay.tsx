@@ -117,7 +117,8 @@ export function CookModeOverlay({ title, instructions, onClose }: CookModeOverla
         <button 
           onClick={handlePrev}
           disabled={currentStep === 0}
-          className="h-20 bg-stone-200 rounded-md flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none hover:bg-stone-300 active:scale-95 transition-all text-stone-600 touch-none"
+          aria-label="Previous step"
+          className="h-20 bg-stone-200 rounded-md flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none hover:bg-stone-300 active:scale-95 transition-all text-stone-600 touch-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400"
         >
           <ChevronLeft className="w-10 h-10" />
         </button>
@@ -132,7 +133,8 @@ export function CookModeOverlay({ title, instructions, onClose }: CookModeOverla
         ) : (
           <button 
             onClick={handleNext}
-            className="h-20 bg-primary text-white border border-border hover:bg-stone-800 rounded-md flex items-center justify-center active:scale-95 transition-all shadow-sm touch-none"
+            aria-label="Next step"
+            className="h-20 bg-primary text-white border border-border hover:bg-stone-800 rounded-md flex items-center justify-center active:scale-95 transition-all shadow-sm touch-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400"
           >
             <ChevronRight className="w-10 h-10" />
           </button>
