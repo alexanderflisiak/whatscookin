@@ -1,0 +1,3 @@
+## 2024-06-25 - Recipe Ingredient N+1 Query Optimization
+**Learning:** When trying to resolve N+1 database queries using batched operations, using a naive filtering array operation (like `filter(!existingMap.has(name))`) is unsafe when handling form inputs that allow duplicates (e.g., repeating an ingredient name across multiple rows). This results in bulk insert attempts failing on uniqueness constraints or polluting the normalized database schema.
+**Action:** Always deduplicate user input (e.g., using `[...new Set(...)]`) before batch inserting missing relational records to preserve schema integrity and avoid unhandled uniqueness errors.
