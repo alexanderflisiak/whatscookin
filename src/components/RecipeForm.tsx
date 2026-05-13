@@ -43,6 +43,8 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
     name: 'ingredients'
   })
 
+  const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif']
+
   async function handleScrape() {
     if (!scrapeUrl) return
     setIsScraping(true)
@@ -109,7 +111,11 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
 
       // Handle Image Upload
       if (imageFile) {
-        const fileExt = imageFile.name.split('.').pop()
+        const fileExt = imageFile.name.split('.').pop()?.toLowerCase()
+        if (!fileExt || !ALLOWED_EXTENSIONS.includes(fileExt)) {
+          throw new Error(`Invalid file type. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}`)
+        }
+
         const fileName = `${recipeId}/${Date.now()}.${fileExt}`
         
         const { error: uploadError } = await supabase.storage
@@ -229,8 +235,15 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
               onChange={(e) => {
                 const file = e.target.files?.[0]
                 if (file) {
+                  const fileExt = file.name.split('.').pop()?.toLowerCase()
+                  if (!fileExt || !ALLOWED_EXTENSIONS.includes(fileExt)) {
+                    setErrorMsg(`Invalid file type. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}`)
+                    e.target.value = '' // Clear the input
+                    return
+                  }
                   setImageFile(file)
                   setPreviewUrl(URL.createObjectURL(file))
+                  setErrorMsg('') // Clear error message on success
                 }
               }}
               className="text-sm text-text-lo file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-stone-100 file:text-text-hi hover:file:bg-stone-200 cursor-pointer focus:outline-none"
