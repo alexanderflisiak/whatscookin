@@ -109,7 +109,12 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
 
       // Handle Image Upload
       if (imageFile) {
-        const fileExt = imageFile.name.split('.').pop()
+        const fileExt = imageFile.name.split('.').pop()?.toLowerCase()
+        const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif']
+        if (!fileExt || !allowedExtensions.includes(fileExt)) {
+          throw new Error('Invalid file type. Only images (jpg, jpeg, png, webp, gif) are allowed.')
+        }
+
         const fileName = `${recipeId}/${Date.now()}.${fileExt}`
         
         const { error: uploadError } = await supabase.storage
@@ -229,8 +234,16 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
               onChange={(e) => {
                 const file = e.target.files?.[0]
                 if (file) {
+                  const ext = file.name.split('.').pop()?.toLowerCase()
+                  const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif']
+                  if (ext && !allowedExtensions.includes(ext)) {
+                    setErrorMsg('Invalid file type. Only images (jpg, jpeg, png, webp, gif) are allowed.')
+                    e.target.value = ''
+                    return
+                  }
                   setImageFile(file)
                   setPreviewUrl(URL.createObjectURL(file))
+                  setErrorMsg('')
                 }
               }}
               className="text-sm text-text-lo file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-stone-100 file:text-text-hi hover:file:bg-stone-200 cursor-pointer focus:outline-none"
