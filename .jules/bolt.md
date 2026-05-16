@@ -1,0 +1,3 @@
+## 2024-05-18 - Batching Supabase Many-to-Many Relationships
+**Learning:** Found a specific N+1 bottleneck when handling many-to-many relationship saves for recipes and ingredients (`RecipeForm.tsx`). The original approach used an iteration loop to find, insert missing ingredients, and bridge the mapping individually.
+**Action:** Changed loop execution to use a single O(1) query `select('id, name').in('name', uniqueIngredientNames)`, isolated the missing variables using `Set` to avoid dupes/contention, batched `insert` missing entities, then batch inserted all the relationships. This greatly reduces roundtrips to Supabase for lists.
