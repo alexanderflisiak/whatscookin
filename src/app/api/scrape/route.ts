@@ -1,5 +1,54 @@
 import { NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
+import dns from 'dns'
+import net from 'net'
+import { Agent, fetch as undiciFetch } from 'undici'
+
+// Custom Undici agent to mitigate DNS rebinding by checking the resolved IP address
+const safeAgent = new Agent({
+  connect: {
+    lookup: (hostname, options, callback) => {
+      dns.lookup(hostname, { all: true, ...options }, (err, addresses) => {
+        if (err) return callback(err, [])
+
+        for (const addr of addresses) {
+          const ip = typeof addr === 'string' ? addr : addr.address
+
+          if (!net.isIP(ip)) continue // Sanity check
+
+          // Block localhost / 0.0.0.0
+          if (ip.startsWith('127.') || ip === '0.0.0.0' || ip === '::1' || ip === '::') {
+             return callback(new Error('Forbidden IP range'), [])
+          }
+
+          // Block Private IPv4 ranges
+          if (ip.startsWith('10.') || ip.startsWith('192.168.') || ip.startsWith('169.254.')) {
+            return callback(new Error('Forbidden IP range'), [])
+          }
+
+          if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(ip)) {
+            return callback(new Error('Forbidden IP range'), [])
+          }
+
+          // Block IPv6 Unique Local Addresses (fc00::/7) and Link-Local (fe80::/10)
+          if (/^(fc|fd|fe8|fe9|fea|feb)[0-9a-f]{0,2}:/i.test(ip)) {
+            return callback(new Error('Forbidden IP range'), [])
+          }
+
+          // Block IPv4-mapped IPv6 addresses
+          const lowerIp = ip.toLowerCase()
+          if (lowerIp.startsWith('::ffff:')) {
+            const mapped = lowerIp.slice(7)
+            if (mapped.startsWith('127.') || mapped.startsWith('10.') || mapped.startsWith('192.168.') || mapped.startsWith('169.254.') || mapped === '0.0.0.0' || mapped === '0' || mapped.startsWith('00') || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(mapped)) {
+               return callback(new Error('Forbidden IP range'), [])
+            }
+          }
+        }
+        callback(null, addresses as dns.LookupAddress[])
+      })
+    }
+  }
+})
 
 function isUrlSafe(urlString: string): boolean {
   try {
@@ -75,13 +124,14 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Invalid or forbidden URL' }, { status: 400 })
       }
 
-      response = await fetch(currentUrl, {
+      response = (await undiciFetch(currentUrl, {
         redirect: 'manual', // Prevent automatic following to intercept and validate Location
+        dispatcher: safeAgent,
         headers: {
           'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
         },
-      })
+      })) as unknown as Response
 
       // If it's a redirect, get the Location header and continue loop
       if (response.status >= 300 && response.status < 400) {
