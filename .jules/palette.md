@@ -1,0 +1,3 @@
+## 2025-04-03 - Added accessibility enhancements to icon-only buttons
+**Learning:** For interactive icon-only elements like toggle buttons, simply adding an `aria-label` isn't enough. It's critical to also add `aria-pressed` to correctly communicate the active/inactive state to assistive technologies, and `focus-visible` classes to ensure adequate keyboard navigation styling for screen reader and keyboard users without compromising the default mouse/touch interactions.
+**Action:** Always check toggle-state buttons for the `aria-pressed` property and rely on `focus-visible` (e.g. `focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:outline-none`) over plain `focus:` for keyboard accessibility.
