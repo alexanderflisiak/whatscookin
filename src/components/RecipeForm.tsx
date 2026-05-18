@@ -129,26 +129,60 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
         await supabase.from('recipe_ingredients').delete().eq('recipe_id', recipeId)
       }
 
-      for (const ing of data.ingredients) {
-        if (!ing.name) continue
-        const ingName = ing.name.trim().toLowerCase()
+      // ⚡ Bolt Optimization: Batch ingredient operations instead of O(n) loops
+      const validIngredients = data.ingredients.filter(i => i.name?.trim());
+      if (validIngredients.length > 0) {
+        // 1. Get all unique names to avoid redundant queries/inserts
+        const uniqueNames = [...new Set(validIngredients.map(i => i.name.trim().toLowerCase()))];
         
-        // Find or create ingredient
-        let { data: existingIng } = await supabase.from('ingredients').select('id').eq('name', ingName).single()
-        let ingredientId = existingIng?.id
+        // 2. Fetch existing ingredients in one batch
+        const { data: existingIngs, error: fetchErr } = await supabase
+          .from('ingredients')
+          .select('id, name')
+          .in('name', uniqueNames);
 
-        if (!ingredientId) {
-          const { data: newIng, error: newIngErr } = await supabase.from('ingredients').insert({ name: ingName }).select('id').single()
-          if (!newIngErr && newIng) ingredientId = newIng.id
+        if (fetchErr) throw fetchErr;
+
+        // 3. Find missing ingredients
+        const existingNames = new Set((existingIngs || []).map(i => i.name));
+        const missingNames = uniqueNames.filter(name => !existingNames.has(name));
+
+        let allIngs = [...(existingIngs || [])];
+
+        // 4. Batch insert missing ingredients
+        if (missingNames.length > 0) {
+          const { data: newIngs, error: insertErr } = await supabase
+            .from('ingredients')
+            .insert(missingNames.map(name => ({ name })))
+            .select('id, name');
+
+          if (insertErr) throw insertErr;
+          if (newIngs) allIngs = [...allIngs, ...newIngs];
         }
 
-        if (ingredientId) {
-          await supabase.from('recipe_ingredients').insert({
-            recipe_id: recipeId,
-            ingredient_id: ingredientId,
-            amount: ing.amount || null,
-            unit: ing.unit || null
+        // 5. Map names to IDs for fast lookup
+        const ingMap = new Map(allIngs.map(i => [i.name, i.id]));
+
+        // 6. Batch insert recipe_ingredients
+        const recipeIngredientsToInsert = validIngredients
+          .map(ing => {
+            const name = ing.name.trim().toLowerCase();
+            const id = ingMap.get(name);
+            if (!id) return null;
+            return {
+              recipe_id: recipeId,
+              ingredient_id: id,
+              amount: ing.amount || null,
+              unit: ing.unit || null
+            };
           })
+          .filter(Boolean);
+
+        if (recipeIngredientsToInsert.length > 0) {
+          const { error: bridgeErr } = await supabase
+            .from('recipe_ingredients')
+            .insert(recipeIngredientsToInsert);
+          if (bridgeErr) throw bridgeErr;
         }
       }
 
