@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
+import { fetch as undiciFetch, Agent } from 'undici'
+import net from 'net'
+import dns from 'dns'
 
 function isUrlSafe(urlString: string): boolean {
   try {
@@ -23,20 +26,31 @@ function isUrlSafe(urlString: string): boolean {
     // Block IPv6 localhost and unspecified
     if (hostname === '::1' || hostname === '::' || hostname === '0:0:0:0:0:0:0:0' || hostname === '0:0:0:0:0:0:0:1') return false
 
-    // Block private IP ranges (IPv4)
-    // 10.0.0.0 - 10.255.255.255
-    if (hostname.startsWith('10.')) return false
-    // 172.16.0.0 - 172.31.255.255
-    if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)) return false
-    // 192.168.0.0 - 192.168.255.255
-    if (hostname.startsWith('192.168.')) return false
-    // 127.0.0.0 - 127.255.255.255 (loopback)
-    if (hostname.startsWith('127.')) return false
-    // 169.254.0.0 - 169.254.255.255 (link-local)
-    if (hostname.startsWith('169.254.')) return false
+    // Check if the hostname (without brackets) is an IP address
+    const isIp = net.isIP(hostname);
 
-    // Block IPv6 Unique Local Addresses (fc00::/7) and Link-Local (fe80::/10)
-    if (/^(fc|fd|fe8|fe9|fea|feb)[0-9a-f]{0,2}:/i.test(hostname)) return false
+    // Block private IP ranges
+    if (isIp) {
+      // IPv4 ranges
+      if (isIp === 4) {
+        // 10.0.0.0 - 10.255.255.255
+        if (hostname.startsWith('10.')) return false
+        // 172.16.0.0 - 172.31.255.255
+        if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)) return false
+        // 192.168.0.0 - 192.168.255.255
+        if (hostname.startsWith('192.168.')) return false
+        // 127.0.0.0 - 127.255.255.255 (loopback)
+        if (hostname.startsWith('127.')) return false
+        // 169.254.0.0 - 169.254.255.255 (link-local)
+        if (hostname.startsWith('169.254.')) return false
+      }
+
+      // IPv6 ranges
+      if (isIp === 6) {
+        // Block IPv6 Unique Local Addresses (fc00::/7) and Link-Local (fe80::/10)
+        if (/^(fc|fd|fe8|fe9|fea|feb)[0-9a-f]{0,2}:/i.test(hostname)) return false
+      }
+    }
 
     // Block IPv4-mapped IPv6 addresses
     const lowerHost = hostname.toLowerCase()
@@ -59,6 +73,28 @@ function isUrlSafe(urlString: string): boolean {
   }
 }
 
+const ssrfAgent = new Agent({
+  connect: {
+    lookup: (hostname: string, options: dns.LookupOptions, callback: (err: NodeJS.ErrnoException | null, addresses: dns.LookupAddress[]) => void) => {
+      dns.lookup(hostname, { ...options, all: true }, (err, addresses) => {
+        if (err) return callback(err, []);
+
+        for (const addr of addresses) {
+          const ip = typeof addr === 'string' ? addr : addr.address;
+          const family = typeof addr === 'string' ? net.isIP(addr) : addr.family;
+          const formattedIp = family === 6 ? `[${ip}]` : ip;
+
+          if (!isUrlSafe(`http://${formattedIp}`)) {
+            return callback(new Error(`Forbidden IP resolved: ${ip}`), []);
+          }
+        }
+
+        callback(null, addresses as dns.LookupAddress[]);
+      });
+    }
+  }
+});
+
 export async function POST(request: Request) {
   try {
     const { url } = await request.json()
@@ -75,13 +111,14 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Invalid or forbidden URL' }, { status: 400 })
       }
 
-      response = await fetch(currentUrl, {
+      response = (await undiciFetch(currentUrl, {
+        dispatcher: ssrfAgent,
         redirect: 'manual', // Prevent automatic following to intercept and validate Location
         headers: {
           'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
         },
-      })
+      })) as unknown as Response
 
       // If it's a redirect, get the Location header and continue loop
       if (response.status >= 300 && response.status < 400) {
