@@ -1,0 +1,3 @@
+## 2024-05-19 - Optimizing N+1 'find-or-create' queries in Supabase
+**Learning:** Iterative 'find-or-create' queries inside a loop using `.single()` cause significant N+1 performance bottlenecks in Supabase. For 5 ingredients, this resulted in 15 sequential database calls.
+**Action:** Replace iterative lookups with a batched approach using `.select().in()`, deduplicate with a `Set`, and perform batched `.insert()` for both the missing entities and the linking bridge tables. This reduces the number of roundtrips to an O(1) constant (e.g., exactly 3 queries regardless of item count).
