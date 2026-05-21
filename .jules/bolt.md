@@ -1,0 +1,3 @@
+## 2024-03-24 - Batch Database Operations for Many-to-Many Relationships
+**Learning:** For many-to-many relationships (like ingredients in a recipe), iterating through items and performing `.single()` lookups followed by individual `.insert()` calls leads to an N+1 query problem, severely impacting save performance when handling many items.
+**Action:** Use batching instead. Fetch existing records using `.in('column', values)`, deduplicate missing items to prevent constraint violations, batch insert them with `.select()` to get IDs, and finally batch insert the bridge records. This reduces database roundtrips from O(N) to O(1).
