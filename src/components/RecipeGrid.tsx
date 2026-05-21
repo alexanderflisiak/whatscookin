@@ -100,26 +100,30 @@ export function RecipeGrid() {
       <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md px-4 pt-4 pb-2">
         <div className="flex gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-lo" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-lo" aria-hidden="true" />
             <input 
               type="text" 
               placeholder="Search recipes..." 
+              aria-label="Search recipes"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-white border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-stone-300 transition-shadow text-text-hi placeholder:text-text-lo"
+              className="w-full pl-10 pr-4 py-3 bg-white border border-border rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-300 transition-shadow text-text-hi placeholder:text-text-lo"
             />
           </div>
           <button 
             onClick={() => setRandomizerOpen(true)}
+            aria-label="Surprise Me"
             title="Surprise Me"
-            className="shrink-0 w-12 h-12 bg-white border border-border rounded-md flex items-center justify-center text-text-hi hover:bg-stone-50 transition-colors shadow-sm"
+            className="shrink-0 w-12 h-12 bg-white border border-border rounded-md flex items-center justify-center text-text-hi hover:bg-stone-50 transition-colors shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-stone-300"
           >
             <Dices className="w-6 h-6" />
           </button>
           <button 
             onClick={() => setIsLazyFilter(!isLazyFilter)}
+            aria-label="I'm Lazy Mode"
+            aria-pressed={isLazyFilter}
             title="I'm Lazy Mode"
-            className={`shrink-0 w-12 h-12 border border-border rounded-md flex items-center justify-center transition-colors shadow-sm ${
+            className={`shrink-0 w-12 h-12 border border-border rounded-md flex items-center justify-center transition-colors shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-stone-300 ${
               isLazyFilter ? 'bg-orange-100 text-orange-800 border-orange-200 shadow-inner' : 'bg-white text-text-hi hover:bg-stone-50'
             }`}
           >
