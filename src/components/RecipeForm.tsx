@@ -256,22 +256,27 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
                 <input 
                   {...register(`ingredients.${index}.amount`)}
                   placeholder="2"
-                  className="w-16 p-2 border border-border rounded-lg bg-surface text-center outline-none focus:border-stone-400 shrink-0"
+                  aria-label="Ingredient amount"
+                  className="w-16 p-2 border border-border rounded-lg bg-surface text-center outline-none focus:border-stone-400 focus-visible:ring-2 focus-visible:ring-stone-300 shrink-0"
                 />
                 <input 
                   {...register(`ingredients.${index}.unit`)}
                   placeholder="cups"
-                  className="w-20 p-2 border border-border rounded-lg bg-surface outline-none focus:border-stone-400 shrink-0"
+                  aria-label="Ingredient unit"
+                  className="w-20 p-2 border border-border rounded-lg bg-surface outline-none focus:border-stone-400 focus-visible:ring-2 focus-visible:ring-stone-300 shrink-0"
                 />
                 <input 
                   {...register(`ingredients.${index}.name`, { required: true })}
                   placeholder="flour"
-                  className="flex-1 p-2 border border-border rounded-lg bg-surface outline-none focus:border-stone-400"
+                  aria-label="Ingredient name"
+                  className="flex-1 p-2 border border-border rounded-lg bg-surface outline-none focus:border-stone-400 focus-visible:ring-2 focus-visible:ring-stone-300"
                 />
                 <button 
                   type="button" 
                   onClick={() => remove(index)}
-                  className="p-2 text-text-lo hover:text-danger hover:bg-red-50 rounded-lg transition-colors mt-0.5 shrink-0"
+                  aria-label="Remove ingredient"
+                  title="Remove ingredient"
+                  className="p-2 text-text-lo hover:text-danger hover:bg-red-50 rounded-lg transition-colors mt-0.5 shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-red-400"
                 >
                   <Trash2 className="w-5 h-5" />
                 </button>
