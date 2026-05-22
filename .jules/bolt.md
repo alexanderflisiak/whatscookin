@@ -1,0 +1,3 @@
+## 2024-05-22 - Supabase find-or-create batching optimization
+**Learning:** For many-to-many relationships (like ingredients in a recipe), using an iterative `.single()` lookup in a loop creates an N+1 query problem, doing O(N) database roundtrips.
+**Action:** Replace the loop with a batch `.select(...).in('column', values)` to find existing records. Deduplicate missing values using `[...new Set(...)]`, then batch `.insert()` them with `.select()` to retrieve generated IDs, and finally batch `.insert()` into the bridge table. This reduces operations from O(N) to O(1) database roundtrips.
