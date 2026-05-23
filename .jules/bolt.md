@@ -1,0 +1,3 @@
+## 2024-05-24 - Batching Database Operations for Many-to-Many Relationships
+**Learning:** In `RecipeForm.tsx`, saving ingredients was doing an iterative `.single()` lookup and individual `insert` per item in a loop. This leads to an N+1 query problem, making save operations O(N) database roundtrips.
+**Action:** When implementing 'find-or-create' for many-to-many relationships (like ingredients in a recipe), avoid iterative lookups. Instead, use a single batched `.in('column', values)` to find existing records, deduplicate missing values, batch `insert` them with `.select()` to get IDs, and finally batch `insert` into the bridge table, reducing DB roundtrips to O(1).
