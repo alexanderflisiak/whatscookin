@@ -1,0 +1,3 @@
+## 2024-03-24 - Batching Supabase N+1 Queries
+**Learning:** For many-to-many relationships (like ingredients in a recipe), iterating with `.single()` lookups inside a loop causes a severe N+1 query problem, increasing database roundtrips from O(1) to O(N).
+**Action:** Always use batch `select(...).in('column', values)` to find existing records, deduplicate missing values using `[...new Set(...)]`, batch `insert` them with `.select()`, and finally batch `insert` the bridge records. This reduces operations to O(1) database calls.
