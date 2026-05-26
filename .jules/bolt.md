@@ -1,0 +1,3 @@
+## 2024-05-26 - Optimize Many-to-Many Recipe Ingredients Insertion
+**Learning:** Found an N+1 query bottleneck specific to this codebase's architecture when saving recipes with many ingredients. Inserting ingredients into a many-to-many relationship using iterative `.single()` and `.insert()` loops causes O(N) database roundtrips.
+**Action:** Replace iterative lookups in loops with a 3-step batching pattern: 1) Batch `.in()` to find existing records, 2) Batch `.insert().select()` missing records, and 3) Build a single ID map to batch `.insert()` bridge records (e.g., into `recipe_ingredients`). This reduces the database roundtrips to O(1) regardless of ingredient count.
