@@ -43,8 +43,9 @@ export function InstructionParser({ text }: { text: string }) {
       <button
         key={`timer-${match.index}`}
         onClick={() => addTimer(totalSeconds, fullMatch)}
-        className="inline-flex items-center justify-center gap-1 mx-1 px-2.5 py-0.5 bg-orange-100 text-orange-800 hover:bg-orange-200 active:scale-95 font-bold rounded-md transition-all leading-none border border-orange-200 shadow-sm align-baseline"
+        className="inline-flex items-center justify-center gap-1 mx-1 px-2.5 py-0.5 bg-orange-100 text-orange-800 hover:bg-orange-200 active:scale-95 font-bold rounded-md transition-all leading-none border border-orange-200 shadow-sm align-baseline focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:outline-none"
         title={`Start a timer for ${fullMatch}`}
+        aria-label={`Start a timer for ${fullMatch}`}
       >
         <Clock className="w-3.5 h-3.5 -mt-0.5" />
         {fullMatch}
