@@ -1,0 +1,3 @@
+## 2024-05-24 - Supabase N+1 query optimization for Many-to-Many updates
+**Learning:** In `RecipeForm.tsx`, saving a recipe iterates over `data.ingredients` and invokes three sequential `supabase` calls (find existing, create missing, insert bridge) per ingredient. This O(N) database roundtrip loop causes severe performance penalties for recipes with many ingredients.
+**Action:** When performing many-to-many "find-or-create" logic in Supabase, replace iterative `.single()` lookups with batch lookups `select(...).in('column', values)`. Batch missing inserts with `.select()`, then batch the bridge table inserts, reducing queries to O(1).
