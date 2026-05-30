@@ -195,8 +195,9 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div>
-          <label className="block text-sm font-semibold mb-1">Title</label>
+          <label htmlFor="title" className="block text-sm font-semibold mb-1">Title</label>
           <input 
+            id="title"
             {...register('title', { required: true })}
             className="w-full p-3 border border-border rounded-lg bg-surface focus:ring-2 focus:ring-stone-300 outline-none font-medium"
             placeholder="e.g. Garlic Butter Chicken"
@@ -204,8 +205,9 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
         </div>
 
         <div>
-          <label className="block text-sm font-semibold mb-1">Source URL (optional)</label>
+          <label htmlFor="source_url" className="block text-sm font-semibold mb-1">Source URL (optional)</label>
           <input 
+            id="source_url"
             {...register('source_url')}
             className="w-full p-2 border border-border rounded-lg bg-surface focus:ring-2 focus:ring-stone-300 outline-none text-sm"
           />
@@ -254,22 +256,27 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
             {fields.map((field, index) => (
               <div key={field.id} className="flex gap-2 items-start">
                 <input 
+                  aria-label={`Ingredient ${index + 1} amount`}
                   {...register(`ingredients.${index}.amount`)}
                   placeholder="2"
                   className="w-16 p-2 border border-border rounded-lg bg-surface text-center outline-none focus:border-stone-400 shrink-0"
                 />
                 <input 
+                  aria-label={`Ingredient ${index + 1} unit`}
                   {...register(`ingredients.${index}.unit`)}
                   placeholder="cups"
                   className="w-20 p-2 border border-border rounded-lg bg-surface outline-none focus:border-stone-400 shrink-0"
                 />
                 <input 
+                  aria-label={`Ingredient ${index + 1} name`}
                   {...register(`ingredients.${index}.name`, { required: true })}
                   placeholder="flour"
                   className="flex-1 p-2 border border-border rounded-lg bg-surface outline-none focus:border-stone-400"
                 />
                 <button 
                   type="button" 
+                  aria-label="Remove ingredient"
+                  title="Remove ingredient"
                   onClick={() => remove(index)}
                   className="p-2 text-text-lo hover:text-danger hover:bg-red-50 rounded-lg transition-colors mt-0.5 shrink-0"
                 >
@@ -281,8 +288,9 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
         </div>
 
         <div>
-          <label className="block text-sm font-semibold mb-1">Instructions</label>
+          <label htmlFor="instructions" className="block text-sm font-semibold mb-1">Instructions</label>
           <textarea 
+            id="instructions"
             {...register('instructions')}
             rows={10}
             className="w-full p-3 border border-border rounded-lg bg-surface focus:ring-2 focus:ring-stone-300 outline-none leading-relaxed"
