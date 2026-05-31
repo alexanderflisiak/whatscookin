@@ -1,0 +1,3 @@
+## 2024-06-01 - Batching Many-to-Many Relationship Queries
+**Learning:** For many-to-many relationships (like ingredients in a recipe), using iterative `.single()` lookups inside a loop (O(N)) results in severe performance bottlenecks due to excessive database roundtrips. Next.js/Supabase architectures demand batched queries to prevent N+1 query problems.
+**Action:** Replace iterative lookups with batched `.in()` queries to find existing records, deduplicate missing items before inserting, and use bulk `.insert()` with `.select()` to gather IDs. This converts O(N) complexity to O(1) constant roundtrips (e.g., from 15 calls for 5 items down to ~3 calls).
