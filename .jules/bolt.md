@@ -1,0 +1,3 @@
+## 2024-05-19 - Batching DB Inserts for Bridge Tables
+**Learning:** Found an N+1 query vulnerability when creating complex objects (recipes) with multiple nested many-to-many relationships (ingredients). Instead of iteratively calling `.single()` and `.insert()` inside a `for...of` loop which drastically increases DB roundtrips, we can use `[...new Set()]` for deduplication and `.in()` for batch lookups.
+**Action:** Always process nested arrays of inputs (like ingredients or tags) by first flattening and batch-loading existing relational IDs via `.in()`, batch inserting the missing ones, and finally batch inserting the bridge table records.
