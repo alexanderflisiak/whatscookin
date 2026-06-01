@@ -1,0 +1,4 @@
+
+## $(date +%Y-%m-%d) - Accessible Icon-Only Buttons and Inline Inputs
+**Learning:** When form inputs (e.g., dynamic ingredient row inputs) are placed inline without explicit visual labels `<label>`, adding `aria-label` is crucial for screen readers. Icon-only buttons (like a trash icon for removing items) need an `aria-label` for screen readers, a native `title` for mouse users (tooltips), and the decorative SVG icon itself should be explicitly hidden from screen readers with `aria-hidden="true"`. Furthermore, interactive elements need clear keyboard focus styles, which can be achieved via `focus-visible:ring-2` to provide visual feedback without disrupting mouse interactions.
+**Action:** Always add descriptive `aria-label`s to visually unlabeled inline inputs. For icon-only buttons, consistently apply `aria-label`, `title`, focus-visible styles, and hide the decorative icon with `aria-hidden="true"`.
