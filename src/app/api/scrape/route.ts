@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
+import net from 'net'
 
 function isUrlSafe(urlString: string): boolean {
   try {
@@ -23,20 +24,24 @@ function isUrlSafe(urlString: string): boolean {
     // Block IPv6 localhost and unspecified
     if (hostname === '::1' || hostname === '::' || hostname === '0:0:0:0:0:0:0:0' || hostname === '0:0:0:0:0:0:0:1') return false
 
-    // Block private IP ranges (IPv4)
-    // 10.0.0.0 - 10.255.255.255
-    if (hostname.startsWith('10.')) return false
-    // 172.16.0.0 - 172.31.255.255
-    if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)) return false
-    // 192.168.0.0 - 192.168.255.255
-    if (hostname.startsWith('192.168.')) return false
-    // 127.0.0.0 - 127.255.255.255 (loopback)
-    if (hostname.startsWith('127.')) return false
-    // 169.254.0.0 - 169.254.255.255 (link-local)
-    if (hostname.startsWith('169.254.')) return false
+    const isIP = net.isIP(hostname) !== 0
 
-    // Block IPv6 Unique Local Addresses (fc00::/7) and Link-Local (fe80::/10)
-    if (/^(fc|fd|fe8|fe9|fea|feb)[0-9a-f]{0,2}:/i.test(hostname)) return false
+    if (isIP) {
+      // Block private IP ranges (IPv4)
+      // 10.0.0.0 - 10.255.255.255
+      if (hostname.startsWith('10.')) return false
+      // 172.16.0.0 - 172.31.255.255
+      if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)) return false
+      // 192.168.0.0 - 192.168.255.255
+      if (hostname.startsWith('192.168.')) return false
+      // 127.0.0.0 - 127.255.255.255 (loopback)
+      if (hostname.startsWith('127.')) return false
+      // 169.254.0.0 - 169.254.255.255 (link-local)
+      if (hostname.startsWith('169.254.')) return false
+
+      // Block IPv6 Unique Local Addresses (fc00::/7) and Link-Local (fe80::/10)
+      if (/^(fc|fd|fe8|fe9|fea|feb)[0-9a-f]{0,2}:/i.test(hostname)) return false
+    }
 
     // Block IPv4-mapped IPv6 addresses
     const lowerHost = hostname.toLowerCase()
@@ -99,7 +104,34 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to access URL' }, { status: 400 })
     }
 
-    const html = await response.text()
+    let html = ''
+    const MAX_BYTES = 1024 * 1024 // 1MB
+
+    if (response.body) {
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let bytesReceived = 0
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        if (value) {
+          bytesReceived += value.length
+          if (bytesReceived > MAX_BYTES) {
+            await reader.cancel()
+            return NextResponse.json({ error: 'Response too large' }, { status: 400 })
+          }
+          html += decoder.decode(value, { stream: true })
+        }
+      }
+      html += decoder.decode()
+    } else {
+      html = await response.text()
+      if (html.length > MAX_BYTES) {
+        return NextResponse.json({ error: 'Response too large' }, { status: 400 })
+      }
+    }
+
     const $ = cheerio.load(html)
     
     let recipeData: any = null
