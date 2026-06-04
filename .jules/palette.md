@@ -1,0 +1,3 @@
+## 2024-05-24 - Accessibility for inline form grids
+**Learning:** When inputs are grouped closely in inline rows or grids (like dynamic ingredient lists) without explicit `<label>` elements for visual cleanliness, screen readers lose context. The adjacent visual layout doesn't translate to semantic associations.
+**Action:** Always add descriptive `aria-label` attributes to `<input>` elements in label-less inline rows to ensure screen reader accessibility. Additionally, apply standard `focus:ring-2` styles to ensure keyboard navigation remains clearly visible across all form inputs, and `aria-hidden="true"` to any decorative icons inside interactive components.

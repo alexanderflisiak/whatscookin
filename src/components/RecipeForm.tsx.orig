@@ -19,7 +19,7 @@ type RecipeFormData = {
 export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Partial<Recipe> & { ingredients?: any[] }, mode?: 'create' | 'edit' }) {
   const router = useRouter()
   const supabase = createClient()
-  
+
   const [scrapeUrl, setScrapeUrl] = useState('')
   const [isScraping, setIsScraping] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -47,21 +47,21 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
     if (!scrapeUrl) return
     setIsScraping(true)
     setErrorMsg('')
-    
+
     try {
       const res = await fetch('/api/scrape', {
         method: 'POST',
         body: JSON.stringify({ url: scrapeUrl })
       })
       const data = await res.json()
-      
+
       if (!res.ok) throw new Error(data.error)
-      
+
       setValue('title', data.title || '')
       setValue('source_url', data.source_url || scrapeUrl)
       setValue('instructions', data.instructions || '')
       setValue('cook_time', data.cook_time || null)
-      
+
       if (data.ingredients && data.ingredients.length > 0) {
         // clear existing and append new
         setValue('ingredients', data.ingredients)
@@ -111,7 +111,7 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
       if (imageFile) {
         const fileExt = imageFile.name.split('.').pop()
         const fileName = `${recipeId}/${Date.now()}.${fileExt}`
-        
+
         const { error: uploadError } = await supabase.storage
           .from('recipe-images')
           .upload(fileName, imageFile, { upsert: true })
@@ -132,7 +132,7 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
       for (const ing of data.ingredients) {
         if (!ing.name) continue
         const ingName = ing.name.trim().toLowerCase()
-        
+
         // Find or create ingredient
         let { data: existingIng } = await supabase.from('ingredients').select('id').eq('name', ingName).single()
         let ingredientId = existingIng?.id
@@ -170,17 +170,17 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
           <div className="flex gap-2">
             <div className="relative flex-1">
               <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-lo" />
-              <input 
-                type="url" 
-                placeholder="https://tasty.co/..." 
+              <input
+                type="url"
+                placeholder="https://tasty.co/..."
                 value={scrapeUrl}
                 onChange={e => setScrapeUrl(e.target.value)}
                 className="w-full pl-9 pr-4 py-2 border border-border rounded-lg bg-background focus:ring-2 focus:ring-stone-300 outline-none"
               />
             </div>
-            <button 
+            <button
               type="button"
-              onClick={handleScrape} 
+              onClick={handleScrape}
               disabled={isScraping || !scrapeUrl}
               className="bg-stone-200 text-text-hi px-4 py-2 rounded-lg font-medium hover:bg-stone-300 disabled:opacity-50 flex items-center gap-2"
             >
@@ -196,7 +196,7 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div>
           <label className="block text-sm font-semibold mb-1">Title</label>
-          <input 
+          <input
             {...register('title', { required: true })}
             className="w-full p-3 border border-border rounded-lg bg-surface focus:ring-2 focus:ring-stone-300 outline-none font-medium"
             placeholder="e.g. Garlic Butter Chicken"
@@ -205,7 +205,7 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
 
         <div>
           <label className="block text-sm font-semibold mb-1">Source URL (optional)</label>
-          <input 
+          <input
             {...register('source_url')}
             className="w-full p-2 border border-border rounded-lg bg-surface focus:ring-2 focus:ring-stone-300 outline-none text-sm"
           />
@@ -223,8 +223,8 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
                 <ImagePlus className="w-8 h-8 mb-1 opacity-40" />
               </div>
             )}
-            <input 
-              type="file" 
+            <input
+              type="file"
               accept="image/*"
               onChange={(e) => {
                 const file = e.target.files?.[0]
@@ -241,38 +241,38 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
         <div>
           <label className="block text-sm font-semibold mb-1 flex justify-between items-center">
             <span>Ingredients</span>
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={() => append({ amount: '', unit: '', name: '' })}
               className="text-text-hi text-sm flex items-center gap-1 font-medium bg-stone-50 px-2 py-1 rounded"
             >
               <Plus className="w-4 h-4" /> Add Row
             </button>
           </label>
-          
+
           <div className="space-y-2">
             {fields.map((field, index) => (
               <div key={field.id} className="flex gap-2 items-start">
-                <input 
+                <input
                   {...register(`ingredients.${index}.amount`)}
                   placeholder="2"
                   aria-label="Ingredient amount"
                   className="w-16 p-2 border border-border rounded-lg bg-surface text-center outline-none focus:ring-2 focus:ring-stone-300 focus:border-stone-400 shrink-0"
                 />
-                <input 
+                <input
                   {...register(`ingredients.${index}.unit`)}
                   placeholder="cups"
                   aria-label="Ingredient unit"
                   className="w-20 p-2 border border-border rounded-lg bg-surface outline-none focus:ring-2 focus:ring-stone-300 focus:border-stone-400 shrink-0"
                 />
-                <input 
+                <input
                   {...register(`ingredients.${index}.name`, { required: true })}
                   placeholder="flour"
                   aria-label="Ingredient name"
                   className="flex-1 p-2 border border-border rounded-lg bg-surface outline-none focus:ring-2 focus:ring-stone-300 focus:border-stone-400"
                 />
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => remove(index)}
                   aria-label="Remove ingredient"
                   title="Remove ingredient"
@@ -287,7 +287,7 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
 
         <div>
           <label className="block text-sm font-semibold mb-1">Instructions</label>
-          <textarea 
+          <textarea
             {...register('instructions')}
             rows={10}
             className="w-full p-3 border border-border rounded-lg bg-surface focus:ring-2 focus:ring-stone-300 outline-none leading-relaxed"
@@ -295,8 +295,8 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
           />
         </div>
 
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           disabled={isSaving}
           className="w-full bg-primary text-white border border-border hover:bg-stone-800 font-bold py-4 rounded-md shadow-sm border border-border hover:bg-stone-500   hover:shadow-sm border border-border transition-all flex items-center justify-center gap-2"
         >
