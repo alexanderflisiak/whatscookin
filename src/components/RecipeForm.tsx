@@ -169,12 +169,13 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
           <label className="block text-sm font-semibold mb-2">Scrape from URL</label>
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-lo" />
+              <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-lo" aria-hidden="true" />
               <input 
                 type="url" 
                 placeholder="https://tasty.co/..." 
                 value={scrapeUrl}
                 onChange={e => setScrapeUrl(e.target.value)}
+                aria-label="Recipe URL to scrape"
                 className="w-full pl-9 pr-4 py-2 border border-border rounded-lg bg-background focus:ring-2 focus:ring-stone-300 outline-none"
               />
             </div>
@@ -256,24 +257,28 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
                 <input 
                   {...register(`ingredients.${index}.amount`)}
                   placeholder="2"
+                  aria-label="Ingredient amount"
                   className="w-16 p-2 border border-border rounded-lg bg-surface text-center outline-none focus:border-stone-400 shrink-0"
                 />
                 <input 
                   {...register(`ingredients.${index}.unit`)}
                   placeholder="cups"
+                  aria-label="Ingredient unit"
                   className="w-20 p-2 border border-border rounded-lg bg-surface outline-none focus:border-stone-400 shrink-0"
                 />
                 <input 
                   {...register(`ingredients.${index}.name`, { required: true })}
                   placeholder="flour"
+                  aria-label="Ingredient name"
                   className="flex-1 p-2 border border-border rounded-lg bg-surface outline-none focus:border-stone-400"
                 />
                 <button 
                   type="button" 
                   onClick={() => remove(index)}
+                  aria-label="Remove ingredient"
                   className="p-2 text-text-lo hover:text-danger hover:bg-red-50 rounded-lg transition-colors mt-0.5 shrink-0"
                 >
-                  <Trash2 className="w-5 h-5" />
+                  <Trash2 className="w-5 h-5" aria-hidden="true" />
                 </button>
               </div>
             ))}
