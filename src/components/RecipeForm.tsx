@@ -129,26 +129,43 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
         await supabase.from('recipe_ingredients').delete().eq('recipe_id', recipeId)
       }
 
-      for (const ing of data.ingredients) {
-        if (!ing.name) continue
-        const ingName = ing.name.trim().toLowerCase()
+      const validIngredients = data.ingredients.filter(ing => ing.name && ing.name.trim() !== '')
+      if (validIngredients.length > 0) {
+        const uniqueNames = [...new Set(validIngredients.map(ing => ing.name.trim().toLowerCase()))]
         
-        // Find or create ingredient
-        let { data: existingIng } = await supabase.from('ingredients').select('id').eq('name', ingName).single()
-        let ingredientId = existingIng?.id
+        // ⚡ Bolt: Find existing ingredients in bulk (O(1)) instead of iterative O(N) loop
+        const { data: existingIngs } = await supabase
+          .from('ingredients')
+          .select('id, name')
+          .in('name', uniqueNames)
 
-        if (!ingredientId) {
-          const { data: newIng, error: newIngErr } = await supabase.from('ingredients').insert({ name: ingName }).select('id').single()
-          if (!newIngErr && newIng) ingredientId = newIng.id
+        const nameToId = new Map(existingIngs?.map(ing => [ing.name, ing.id]) || [])
+
+        // Find ingredients that don't exist yet
+        const missingNames = uniqueNames.filter(name => !nameToId.has(name))
+        if (missingNames.length > 0) {
+          // ⚡ Bolt: Bulk insert missing ingredients
+          const { data: newIngs } = await supabase
+            .from('ingredients')
+            .insert(missingNames.map(name => ({ name })))
+            .select('id, name')
+
+          newIngs?.forEach(ing => nameToId.set(ing.name, ing.id))
         }
 
-        if (ingredientId) {
-          await supabase.from('recipe_ingredients').insert({
+        // Prepare and bulk insert the bridge records
+        const bridgeRecords = validIngredients
+          .map(ing => ({
             recipe_id: recipeId,
-            ingredient_id: ingredientId,
+            ingredient_id: nameToId.get(ing.name.trim().toLowerCase()),
             amount: ing.amount || null,
             unit: ing.unit || null
-          })
+          }))
+          .filter(record => record.ingredient_id)
+
+        if (bridgeRecords.length > 0) {
+          // ⚡ Bolt: Bulk insert recipe_ingredients
+          await supabase.from('recipe_ingredients').insert(bridgeRecords)
         }
       }
 
