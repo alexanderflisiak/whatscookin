@@ -99,7 +99,41 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to access URL' }, { status: 400 })
     }
 
-    const html = await response.text()
+    const MAX_BODY_SIZE = 1024 * 1024 // 1MB limit to prevent OOM
+    let html = ''
+
+    if (response.body) {
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let bytesRead = 0
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          if (value) {
+            bytesRead += value.length
+            if (bytesRead > MAX_BODY_SIZE) {
+              await reader.cancel('Response too large')
+              return NextResponse.json({ error: 'Response body exceeds 1MB limit' }, { status: 400 })
+            }
+            html += decoder.decode(value, { stream: true })
+          }
+        }
+        html += decoder.decode() // flush remaining
+      } catch (e) {
+        console.error('Error reading response stream:', e)
+        return NextResponse.json({ error: 'Failed to read response stream' }, { status: 500 })
+      }
+    } else {
+      // Fallback if no body stream is available
+      html = await response.text()
+      if (html.length > MAX_BODY_SIZE) {
+        return NextResponse.json({ error: 'Response body exceeds 1MB limit' }, { status: 400 })
+      }
+    }
+
     const $ = cheerio.load(html)
     
     let recipeData: any = null
