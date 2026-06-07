@@ -1,0 +1,3 @@
+## 2024-05-18 - Reduce Database Roundtrips in Many-to-Many Operations
+**Learning:** For many-to-many "find-or-create" relationships (e.g. ingredients in a recipe), iterative database queries (e.g., using `.single()` in a loop) create an O(N) bottleneck, causing many roundtrips. Batching the `select(...).in()` and `insert()` operations reduces the roundtrips to O(1).
+**Action:** When saving multiple related items, batch `select` to find existing items, filter for missing ones, batch `insert` missing items to retrieve generated IDs, map names to IDs, and perform a single batch `insert` on the bridge table.
