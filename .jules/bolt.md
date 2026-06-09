@@ -1,0 +1,3 @@
+## 2026-06-09 - Batched Database Inserts for Many-to-Many Relationships
+**Learning:** Iterating and querying a database (N+1 query problem) in a loop for many-to-many relationship tables causes excessive round-trips to the database, creating a severe performance bottleneck. Supabase allows optimizing these lookups with batched operations (.in(), .insert(array)) yielding O(1) query complexity.
+**Action:** Always extract unique keys from arrays, use batched select using .in() to find existing rows, and batch insert missing rows. Then construct a payload array and batch insert all bridge table associations in a single call.
