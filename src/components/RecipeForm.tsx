@@ -129,26 +129,47 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
         await supabase.from('recipe_ingredients').delete().eq('recipe_id', recipeId)
       }
 
-      for (const ing of data.ingredients) {
-        if (!ing.name) continue
-        const ingName = ing.name.trim().toLowerCase()
-        
-        // Find or create ingredient
-        let { data: existingIng } = await supabase.from('ingredients').select('id').eq('name', ingName).single()
-        let ingredientId = existingIng?.id
+      const validIngredients = data.ingredients.filter(ing => ing.name && ing.name.trim() !== '')
 
-        if (!ingredientId) {
-          const { data: newIng, error: newIngErr } = await supabase.from('ingredients').insert({ name: ingName }).select('id').single()
-          if (!newIngErr && newIng) ingredientId = newIng.id
+      if (validIngredients.length > 0) {
+        const ingredientNames = validIngredients.map(ing => ing.name.trim().toLowerCase())
+        
+        // Find existing ingredients
+        const { data: existingIngs } = await supabase
+          .from('ingredients')
+          .select('id, name')
+          .in('name', ingredientNames)
+
+        const existingMap = new Map((existingIngs || []).map(ing => [ing.name, ing.id]))
+
+        // Identify missing ingredients
+        const missingNames = [...new Set(ingredientNames.filter(name => !existingMap.has(name)))]
+
+        // Insert missing ingredients
+        if (missingNames.length > 0) {
+          const { data: newIngs } = await supabase
+            .from('ingredients')
+            .insert(missingNames.map(name => ({ name })))
+            .select('id, name')
+
+          if (newIngs) {
+            newIngs.forEach(ing => existingMap.set(ing.name, ing.id))
+          }
         }
 
-        if (ingredientId) {
-          await supabase.from('recipe_ingredients').insert({
+        // Prepare and insert bridge table records
+        const recipeIngredientsToInsert = validIngredients.map(ing => {
+          const name = ing.name.trim().toLowerCase()
+          return {
             recipe_id: recipeId,
-            ingredient_id: ingredientId,
+            ingredient_id: existingMap.get(name),
             amount: ing.amount || null,
             unit: ing.unit || null
-          })
+          }
+        }).filter(ri => ri.ingredient_id) // ensure we only insert if ingredient was found/created
+
+        if (recipeIngredientsToInsert.length > 0) {
+          await supabase.from('recipe_ingredients').insert(recipeIngredientsToInsert)
         }
       }
 
