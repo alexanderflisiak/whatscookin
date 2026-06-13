@@ -1,0 +1,3 @@
+## 2024-05-24 - Batching many-to-many inserts
+**Learning:** When dealing with many-to-many relationship inserts (e.g. adding multiple ingredients to a recipe), iterating through items and performing `.select()` and `.insert()` inside a loop causes an N+1 query problem, resulting in excessive network requests to Supabase and slowing down form submission significantly.
+**Action:** Always extract unique values, perform a single batch lookup using `.in()`, batch insert any missing records with `.insert().select()`, build a local ID map, and finally batch insert the bridge table records to reduce database roundtrips from O(N) to O(1).
