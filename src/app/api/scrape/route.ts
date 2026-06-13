@@ -95,11 +95,31 @@ export async function POST(request: Request) {
       break // Not a redirect, exit loop
     }
 
-    if (!response || !response.ok) {
+    if (!response || !response.ok || !response.body) {
       return NextResponse.json({ error: 'Failed to access URL' }, { status: 400 })
     }
 
-    const html = await response.text()
+    // Security: Read stream with a hard limit to prevent OOM DOS
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let html = ''
+    let bytesRead = 0
+    const MAX_BYTES = 1024 * 1024 * 2 // 2MB limit
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      bytesRead += value.length
+      if (bytesRead > MAX_BYTES) {
+        await reader.cancel()
+        return NextResponse.json({ error: 'Response too large' }, { status: 400 })
+      }
+
+      html += decoder.decode(value, { stream: true })
+    }
+    html += decoder.decode() // flush
+
     const $ = cheerio.load(html)
     
     let recipeData: any = null
