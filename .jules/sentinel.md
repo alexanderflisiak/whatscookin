@@ -7,3 +7,7 @@
 **Vulnerability:** The `isUrlSafe` function in `/api/scrape/route.ts` only blocked standard private IPv4 addresses. It could be bypassed using `0.0.0.0`, IPv6 local loopback (`::1`), IPv6 unspecified (`::`), and IPv4-mapped IPv6 addresses (e.g., `::ffff:127.0.0.1` normalized to `::ffff:7f00:1`). Furthermore, standard `fetch` automatically follows redirects, allowing an attacker to bypass initial validation by pointing the scraper to a safe URL that redirects to an internal one.
 **Learning:** Node's `URL` parsing handles IPv6 mapping unexpectedly depending on the environment (normalizing dotted-quad mapping to hexadecimal). Relying purely on initial hostname filtering is insufficient when native `fetch` handles redirects transparently.
 **Prevention:** Always validate all possible IP representations including IPv6 brackets, mapping, and unique local ranges. Crucially, any proxying `fetch` must set `redirect: 'manual'` so intermediate `Location` headers can be intercepted, resolved contextually, and passed back through the validation loop.
+## 2026-06-16 - DoS via Memory Exhaustion in URL Scraper
+**Vulnerability:** The scraper read the entire response into memory using `response.text()`, allowing DoS via OOM on large payloads.
+**Learning:** Untrusted URLs can return infinitely large payloads, crashing the server.
+**Prevention:** Use a streaming reader (`response.body.getReader()` or similar chunk processing) with a strict byte limit, and call `await reader.cancel()` if exceeded.
