@@ -1,0 +1,3 @@
+## 2024-05-01 - Avoid Label Wrappers for Complex Input Groups
+**Learning:** Using a `<label>` element as a generic wrapper for a grouped list of inputs and buttons (like the dynamic ingredients list) is an accessibility anti-pattern. It confuses screen readers by creating complex nested interactive elements and doesn't explicitly link individual dynamically created inputs to their context.
+**Action:** Always replace generic `<label>` wrappers over complex form sections with semantic `<div>` containers or fieldsets, and explicitly provide `aria-label` attributes to individual inputs in a list to clarify their specific purpose.
