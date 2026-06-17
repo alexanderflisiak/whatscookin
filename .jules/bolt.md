@@ -1,0 +1,3 @@
+## 2024-05-18 - Database Mutation Batching in Recipe Forms
+**Learning:** The `RecipeForm` was using an O(N) loop to process ingredients, making up to 3 separate database calls (select, insert ingredient, insert bridge record) per ingredient, leading to slow save times and potential network congestion for recipes with many ingredients.
+**Action:** Replace sequential ingredient processing loops with batched queries. First filter and aggregate valid names, fetch existing records in one query using `in`, insert missing ones in bulk, and finally insert all bridge records in a single bulk insert operation to reduce database roundtrips to O(1).
