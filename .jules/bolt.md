@@ -1,0 +1,3 @@
+## 2025-05-15 - Batched Database Queries for Many-to-Many Relationships
+**Learning:** Found an N+1 query bottleneck when inserting multiple ingredients in `RecipeForm.tsx`. The code queried for the existence of each ingredient, optionally inserted it, and then inserted the bridge record, one by one. This causes significant latency (O(n) database round trips).
+**Action:** When saving many-to-many relationship rows with "upsert-like" requirements on the child table, always aggregate all names, deduplicate them to avoid unique constraint errors during insert, query for all existing IDs at once (`.in()`), insert the missing ones in a single batch, and then build and batch-insert all the bridge records.
