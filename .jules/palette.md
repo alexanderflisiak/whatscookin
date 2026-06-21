@@ -1,0 +1,3 @@
+## 2026-06-21 - Icon-Only Button Accessibility Pattern
+**Learning:** Found a pattern in this app where icon-only buttons (like 'Surprise Me' and 'Lazy Mode' filters) lacked proper keyboard focus states, explicit `aria-label`s, and `aria-pressed` states for toggles. Also, decorative icons inside these buttons were being announced by screen readers.
+**Action:** When adding icon-only buttons or inputs with decorative icons, always apply `aria-hidden="true"` to the icon itself. Provide an explicit `aria-label` on the button/input, add `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-300` for keyboard navigation, and use `aria-pressed={state}` for toggle buttons.
