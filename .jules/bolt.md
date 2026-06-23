@@ -1,0 +1,3 @@
+## 2024-06-23 - Client-Side N+1 Queries in Supabase Loops
+**Learning:** Performing `await supabase...` queries inside a loop on the frontend causes severe N+1 network waterfalls because each iteration waits for a network roundtrip, significantly blocking user interaction.
+**Action:** Extract database operations out of the loop. Collect all required identifiers, use bulk queries (e.g., `.in()`), insert missing records in a single bulk operation, and build a local lookup map (normalizing keys) to efficiently map IDs back to the original array (which might contain duplicates) for bulk relationship inserts.
