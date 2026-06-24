@@ -255,25 +255,29 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
               <div key={field.id} className="flex gap-2 items-start">
                 <input 
                   {...register(`ingredients.${index}.amount`)}
+                  aria-label={`Ingredient ${index + 1} amount`}
                   placeholder="2"
                   className="w-16 p-2 border border-border rounded-lg bg-surface text-center outline-none focus:border-stone-400 shrink-0"
                 />
                 <input 
                   {...register(`ingredients.${index}.unit`)}
+                  aria-label={`Ingredient ${index + 1} unit`}
                   placeholder="cups"
                   className="w-20 p-2 border border-border rounded-lg bg-surface outline-none focus:border-stone-400 shrink-0"
                 />
                 <input 
                   {...register(`ingredients.${index}.name`, { required: true })}
+                  aria-label={`Ingredient ${index + 1} name`}
                   placeholder="flour"
                   className="flex-1 p-2 border border-border rounded-lg bg-surface outline-none focus:border-stone-400"
                 />
                 <button 
                   type="button" 
+                  aria-label={`Remove ingredient ${index + 1}`}
                   onClick={() => remove(index)}
-                  className="p-2 text-text-lo hover:text-danger hover:bg-red-50 rounded-lg transition-colors mt-0.5 shrink-0"
+                  className="p-2 text-text-lo hover:text-danger hover:bg-red-50 rounded-lg transition-colors mt-0.5 shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-stone-400"
                 >
-                  <Trash2 className="w-5 h-5" />
+                  <Trash2 className="w-5 h-5" aria-hidden="true" />
                 </button>
               </div>
             ))}
