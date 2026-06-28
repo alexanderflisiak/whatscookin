@@ -1,0 +1,3 @@
+## 2024-05-24 - Batching Related Entity Network Operations
+**Learning:** The application was executing N+1 individual network roundtrips to resolve, create, and link ingredients in a loop. When saving forms with large related entity lists (e.g., ingredients) over a network DB (Supabase), resolving missing entities sequentially blocks execution heavily.
+**Action:** Batch related entity resolutions into three O(1) operations: fetch all existing entities using an `.in()` query (using a deduplicated array of normalized names), bulk insert any missing entities, and finally bulk insert the many-to-many bridge records.
