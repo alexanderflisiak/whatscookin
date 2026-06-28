@@ -1,0 +1,3 @@
+## 2024-06-28 - Dynamic Form Array Accessibility
+**Learning:** Using a `<label>` element as a generic wrapper or header for groups containing dynamic input lists and interactive elements (like an "Add Row" button) creates invalid HTML and accessibility issues. Furthermore, dynamic input fields within lists need specific, unique `aria-label` attributes incorporating their index so screen readers can distinguish between multiple similar fields (e.g., "Ingredient 1 amount" vs "Ingredient 2 amount").
+**Action:** Always use `<fieldset>` and `<legend>` for grouping form arrays, and consistently append index-based `aria-label`s to dynamically generated inputs and action buttons in lists.
