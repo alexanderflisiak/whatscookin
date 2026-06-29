@@ -238,8 +238,8 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-semibold mb-1 flex justify-between items-center">
+        <fieldset>
+          <legend className="w-full block text-sm font-semibold mb-1 flex justify-between items-center">
             <span>Ingredients</span>
             <button 
               type="button" 
@@ -248,37 +248,41 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
             >
               <Plus className="w-4 h-4" /> Add Row
             </button>
-          </label>
+          </legend>
           
           <div className="space-y-2">
             {fields.map((field, index) => (
               <div key={field.id} className="flex gap-2 items-start">
                 <input 
                   {...register(`ingredients.${index}.amount`)}
+                  aria-label={`Ingredient ${index + 1} amount`}
                   placeholder="2"
                   className="w-16 p-2 border border-border rounded-lg bg-surface text-center outline-none focus:border-stone-400 shrink-0"
                 />
                 <input 
                   {...register(`ingredients.${index}.unit`)}
+                  aria-label={`Ingredient ${index + 1} unit`}
                   placeholder="cups"
                   className="w-20 p-2 border border-border rounded-lg bg-surface outline-none focus:border-stone-400 shrink-0"
                 />
                 <input 
                   {...register(`ingredients.${index}.name`, { required: true })}
+                  aria-label={`Ingredient ${index + 1} name`}
                   placeholder="flour"
                   className="flex-1 p-2 border border-border rounded-lg bg-surface outline-none focus:border-stone-400"
                 />
                 <button 
                   type="button" 
                   onClick={() => remove(index)}
+                  aria-label={`Remove ingredient ${index + 1}`}
                   className="p-2 text-text-lo hover:text-danger hover:bg-red-50 rounded-lg transition-colors mt-0.5 shrink-0"
                 >
-                  <Trash2 className="w-5 h-5" />
+                  <Trash2 className="w-5 h-5" aria-hidden="true" />
                 </button>
               </div>
             ))}
           </div>
-        </div>
+        </fieldset>
 
         <div>
           <label className="block text-sm font-semibold mb-1">Instructions</label>
