@@ -1,0 +1,3 @@
+## 2026-06-30 - Batched Database Queries
+**Learning:** Resolving N+1 query bottlenecks over the network when saving forms with related entity lists (e.g., ingredients) requires batching related entity resolutions into three O(1) operations: fetch all existing entities by name using an `.in()` query, bulk insert any missing entities, and finally bulk insert the many-to-many bridge/join table records. Ensure deduplication of the list of identifiers for the read/insert queries to prevent unique constraint violations, but retain original array for many-to-many join.
+**Action:** Use batched O(1) queries instead of O(n) loops inside Supabase requests to fix N+1 bottlenecks.
