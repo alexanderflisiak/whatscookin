@@ -238,17 +238,17 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-semibold mb-1 flex justify-between items-center">
+        <fieldset className="min-w-0">
+          <legend className="w-full text-sm font-semibold mb-1 flex justify-between items-center">
             <span>Ingredients</span>
             <button 
               type="button" 
               onClick={() => append({ amount: '', unit: '', name: '' })}
-              className="text-text-hi text-sm flex items-center gap-1 font-medium bg-stone-50 px-2 py-1 rounded"
+              className="text-text-hi text-sm flex items-center gap-1 font-medium bg-stone-50 px-2 py-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400"
             >
               <Plus className="w-4 h-4" /> Add Row
             </button>
-          </label>
+          </legend>
           
           <div className="space-y-2">
             {fields.map((field, index) => (
@@ -256,29 +256,33 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
                 <input 
                   {...register(`ingredients.${index}.amount`)}
                   placeholder="2"
+                  aria-label={`Ingredient ${index + 1} amount`}
                   className="w-16 p-2 border border-border rounded-lg bg-surface text-center outline-none focus:border-stone-400 shrink-0"
                 />
                 <input 
                   {...register(`ingredients.${index}.unit`)}
                   placeholder="cups"
+                  aria-label={`Ingredient ${index + 1} unit`}
                   className="w-20 p-2 border border-border rounded-lg bg-surface outline-none focus:border-stone-400 shrink-0"
                 />
                 <input 
                   {...register(`ingredients.${index}.name`, { required: true })}
                   placeholder="flour"
+                  aria-label={`Ingredient ${index + 1} name`}
                   className="flex-1 p-2 border border-border rounded-lg bg-surface outline-none focus:border-stone-400"
                 />
                 <button 
                   type="button" 
                   onClick={() => remove(index)}
-                  className="p-2 text-text-lo hover:text-danger hover:bg-red-50 rounded-lg transition-colors mt-0.5 shrink-0"
+                  aria-label={`Remove ingredient ${index + 1}`}
+                  className="p-2 text-text-lo hover:text-danger hover:bg-red-50 rounded-lg transition-colors mt-0.5 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400"
                 >
-                  <Trash2 className="w-5 h-5" />
+                  <Trash2 className="w-5 h-5" aria-hidden="true" />
                 </button>
               </div>
             ))}
           </div>
-        </div>
+        </fieldset>
 
         <div>
           <label className="block text-sm font-semibold mb-1">Instructions</label>
