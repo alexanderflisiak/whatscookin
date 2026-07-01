@@ -1,0 +1,3 @@
+## 2024-07-01 - Dynamic Form Arrays Accessibility
+**Learning:** Using a single `<label>` to wrap dynamic form arrays containing multiple interactive elements (like inputs and remove buttons) creates invalid semantic structures and confuses screen readers. Furthermore, dynamic input fields require explicit context.
+**Action:** Use `<fieldset>` and `<legend>` for logical grouping instead of a wrapper `<label>`. Always append index-based `aria-label`s to individual repeating inputs and row-level icon-only actions (e.g., `aria-label="Ingredient ${index + 1} amount"`) to explicitly distinguish them.
