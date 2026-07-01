@@ -129,26 +129,43 @@ export function RecipeForm({ initialData, mode = 'create' }: { initialData?: Par
         await supabase.from('recipe_ingredients').delete().eq('recipe_id', recipeId)
       }
 
-      for (const ing of data.ingredients) {
-        if (!ing.name) continue
-        const ingName = ing.name.trim().toLowerCase()
+      const validIngredients = data.ingredients.filter(ing => ing.name && ing.name.trim() !== '')
+      if (validIngredients.length > 0) {
+        const uniqueNames = Array.from(new Set(validIngredients.map(ing => ing.name.trim().toLowerCase())))
         
-        // Find or create ingredient
-        let { data: existingIng } = await supabase.from('ingredients').select('id').eq('name', ingName).single()
-        let ingredientId = existingIng?.id
+        // Find existing ingredients
+        const { data: existingIngs } = await supabase.from('ingredients').select('id, name').in('name', uniqueNames)
+        const nameToId = new Map((existingIngs || []).map(ing => [ing.name.toLowerCase(), ing.id]))
 
-        if (!ingredientId) {
-          const { data: newIng, error: newIngErr } = await supabase.from('ingredients').insert({ name: ingName }).select('id').single()
-          if (!newIngErr && newIng) ingredientId = newIng.id
+        // Create missing ingredients
+        const missingNames = uniqueNames.filter(name => !nameToId.has(name))
+        if (missingNames.length > 0) {
+          const { data: newIngs } = await supabase.from('ingredients')
+            .insert(missingNames.map(name => ({ name })))
+            .select('id, name')
+
+          if (newIngs) {
+            newIngs.forEach(ing => nameToId.set(ing.name.toLowerCase(), ing.id))
+          }
         }
 
-        if (ingredientId) {
-          await supabase.from('recipe_ingredients').insert({
-            recipe_id: recipeId,
-            ingredient_id: ingredientId,
-            amount: ing.amount || null,
-            unit: ing.unit || null
-          })
+        // Insert bridge records
+        const bridgeRecords = validIngredients.reduce((acc: any[], ing) => {
+          const name = ing.name.trim().toLowerCase()
+          const ingredientId = nameToId.get(name)
+          if (ingredientId) {
+            acc.push({
+              recipe_id: recipeId,
+              ingredient_id: ingredientId,
+              amount: ing.amount || null,
+              unit: ing.unit || null
+            })
+          }
+          return acc
+        }, [])
+
+        if (bridgeRecords.length > 0) {
+          await supabase.from('recipe_ingredients').insert(bridgeRecords)
         }
       }
 
