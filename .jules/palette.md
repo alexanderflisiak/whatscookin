@@ -1,0 +1,3 @@
+## 2024-07-02 - Accessible Dynamic Form Arrays
+**Learning:** Wrapping interactive elements like an "Add Row" button inside a generic label is invalid HTML and causes screen reader confusion. Additionally, visual grouping of dynamic inputs (like an ingredient list) is insufficient; screen readers need explicit indexed aria-labels on each input (e.g., "Ingredient 1 amount") and row-level action buttons (e.g., "Remove ingredient 1") to provide context.
+**Action:** Use semantic fieldset/legend for grouping form sections. Add index-based aria-labels to all repeating inputs and row-level icon buttons in dynamic arrays, and hide decorative icons with aria-hidden="true".
