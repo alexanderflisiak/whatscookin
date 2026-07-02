@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
+import { promises as dns } from 'dns'
 
-function isUrlSafe(urlString: string): boolean {
+async function isUrlSafe(urlString: string): Promise<boolean> {
   try {
     const parsedUrl = new URL(urlString)
 
@@ -17,29 +18,40 @@ function isUrlSafe(urlString: string): boolean {
       hostname = hostname.slice(1, -1)
     }
 
+    let resolvedIp = hostname
+    try {
+      const { address } = await dns.lookup(hostname)
+      resolvedIp = address
+    } catch (err) {
+      // If DNS resolution fails, block the request
+      return false
+    }
+
+    const ip = resolvedIp
+
     // Block localhost and 0.0.0.0
-    if (hostname === 'localhost' || hostname === '0.0.0.0') return false
+    if (ip === 'localhost' || ip === '0.0.0.0') return false
 
     // Block IPv6 localhost and unspecified
-    if (hostname === '::1' || hostname === '::' || hostname === '0:0:0:0:0:0:0:0' || hostname === '0:0:0:0:0:0:0:1') return false
+    if (ip === '::1' || ip === '::' || ip === '0:0:0:0:0:0:0:0' || ip === '0:0:0:0:0:0:0:1') return false
 
     // Block private IP ranges (IPv4)
     // 10.0.0.0 - 10.255.255.255
-    if (hostname.startsWith('10.')) return false
+    if (ip.startsWith('10.')) return false
     // 172.16.0.0 - 172.31.255.255
-    if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)) return false
+    if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(ip)) return false
     // 192.168.0.0 - 192.168.255.255
-    if (hostname.startsWith('192.168.')) return false
+    if (ip.startsWith('192.168.')) return false
     // 127.0.0.0 - 127.255.255.255 (loopback)
-    if (hostname.startsWith('127.')) return false
+    if (ip.startsWith('127.')) return false
     // 169.254.0.0 - 169.254.255.255 (link-local)
-    if (hostname.startsWith('169.254.')) return false
+    if (ip.startsWith('169.254.')) return false
 
     // Block IPv6 Unique Local Addresses (fc00::/7) and Link-Local (fe80::/10)
-    if (/^(fc|fd|fe8|fe9|fea|feb)[0-9a-f]{0,2}:/i.test(hostname)) return false
+    if (/^(fc|fd|fe8|fe9|fea|feb)[0-9a-f]{0,2}:/i.test(ip)) return false
 
     // Block IPv4-mapped IPv6 addresses
-    const lowerHost = hostname.toLowerCase()
+    const lowerHost = ip.toLowerCase()
     if (lowerHost.startsWith('::ffff:')) {
       const mapped = lowerHost.slice(7)
       if (mapped.startsWith('127.') || /^7f[0-9a-f]{2}:/i.test(mapped)) return false
@@ -71,7 +83,7 @@ export async function POST(request: Request) {
     // Fetch loop to follow redirects securely
     for (let i = 0; i <= MAX_REDIRECTS; i++) {
       // SSRF Protection: Validate URL before fetching
-      if (!isUrlSafe(currentUrl)) {
+      if (!(await isUrlSafe(currentUrl))) {
         return NextResponse.json({ error: 'Invalid or forbidden URL' }, { status: 400 })
       }
 
