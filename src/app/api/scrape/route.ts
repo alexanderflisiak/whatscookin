@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
+import { lookup } from 'dns/promises'
 
-function isUrlSafe(urlString: string): boolean {
+async function isUrlSafe(urlString: string): Promise<boolean> {
   try {
     const parsedUrl = new URL(urlString)
 
@@ -15,6 +16,14 @@ function isUrlSafe(urlString: string): boolean {
     // Strip brackets for IPv6
     if (hostname.startsWith('[') && hostname.endsWith(']')) {
       hostname = hostname.slice(1, -1)
+    }
+
+    // SSRF Protection: Resolve custom domains to IP to prevent bypassing via DNS (e.g. localtest.me -> 127.0.0.1)
+    try {
+      const { address } = await lookup(hostname)
+      hostname = address
+    } catch {
+      return false // Failed to resolve DNS
     }
 
     // Block localhost and 0.0.0.0
@@ -71,7 +80,7 @@ export async function POST(request: Request) {
     // Fetch loop to follow redirects securely
     for (let i = 0; i <= MAX_REDIRECTS; i++) {
       // SSRF Protection: Validate URL before fetching
-      if (!isUrlSafe(currentUrl)) {
+      if (!(await isUrlSafe(currentUrl))) {
         return NextResponse.json({ error: 'Invalid or forbidden URL' }, { status: 400 })
       }
 
