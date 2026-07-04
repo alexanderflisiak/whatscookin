@@ -1,0 +1,3 @@
+## 2026-07-04 - Dynamic Form Array Accessibility
+**Learning:** Visual grouping of dynamic form arrays (like ingredient lists) is insufficient for screen readers. Furthermore, `<label>` elements should not be used as generic wrappers or headers for groups containing dynamic input lists.
+**Action:** Use `<fieldset>` and `<legend>` for grouped form content, and apply flexbox directly to the `<legend>` element. Always append index-based `aria-label`s to individual inputs (e.g., `aria-label="Ingredient ${index + 1} amount"`) and add explicit `aria-label`s and focus indicators to row-level icon-only actions (like remove buttons).
