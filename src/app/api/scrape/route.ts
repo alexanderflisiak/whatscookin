@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
+import dns from 'dns/promises'
 
-function isUrlSafe(urlString: string): boolean {
+async function isUrlSafe(urlString: string): Promise<{ isSafe: boolean }> {
   try {
     const parsedUrl = new URL(urlString)
 
     // Only allow HTTP and HTTPS protocols
     if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
-      return false
+      return { isSafe: false }
     }
 
     let hostname = parsedUrl.hostname
@@ -17,45 +18,56 @@ function isUrlSafe(urlString: string): boolean {
       hostname = hostname.slice(1, -1)
     }
 
+    if (hostname === 'localhost' || hostname.endsWith('.local') || hostname.endsWith('.internal')) {
+        return { isSafe: false }
+    }
+
+    let resolvedIp: string
+    try {
+      const { address } = await dns.lookup(hostname)
+      resolvedIp = address
+    } catch {
+      return { isSafe: false }
+    }
+
+    hostname = resolvedIp
+
     // Block localhost and 0.0.0.0
-    if (hostname === 'localhost' || hostname === '0.0.0.0') return false
+    if (hostname === 'localhost' || hostname === '0.0.0.0') return { isSafe: false }
 
     // Block IPv6 localhost and unspecified
-    if (hostname === '::1' || hostname === '::' || hostname === '0:0:0:0:0:0:0:0' || hostname === '0:0:0:0:0:0:0:1') return false
+    if (hostname === '::1' || hostname === '::' || hostname === '0:0:0:0:0:0:0:0' || hostname === '0:0:0:0:0:0:0:1') return { isSafe: false }
 
     // Block private IP ranges (IPv4)
     // 10.0.0.0 - 10.255.255.255
-    if (hostname.startsWith('10.')) return false
+    if (hostname.startsWith('10.')) return { isSafe: false }
     // 172.16.0.0 - 172.31.255.255
-    if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)) return false
+    if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)) return { isSafe: false }
     // 192.168.0.0 - 192.168.255.255
-    if (hostname.startsWith('192.168.')) return false
+    if (hostname.startsWith('192.168.')) return { isSafe: false }
     // 127.0.0.0 - 127.255.255.255 (loopback)
-    if (hostname.startsWith('127.')) return false
+    if (hostname.startsWith('127.')) return { isSafe: false }
     // 169.254.0.0 - 169.254.255.255 (link-local)
-    if (hostname.startsWith('169.254.')) return false
+    if (hostname.startsWith('169.254.')) return { isSafe: false }
 
     // Block IPv6 Unique Local Addresses (fc00::/7) and Link-Local (fe80::/10)
-    if (/^(fc|fd|fe8|fe9|fea|feb)[0-9a-f]{0,2}:/i.test(hostname)) return false
+    if (/^(fc|fd|fe8|fe9|fea|feb)[0-9a-f]{0,2}:/i.test(hostname)) return { isSafe: false }
 
     // Block IPv4-mapped IPv6 addresses
     const lowerHost = hostname.toLowerCase()
     if (lowerHost.startsWith('::ffff:')) {
       const mapped = lowerHost.slice(7)
-      if (mapped.startsWith('127.') || /^7f[0-9a-f]{2}:/i.test(mapped)) return false
-      if (mapped.startsWith('10.') || /^a[0-9a-f]{2}:/i.test(mapped)) return false
-      if (mapped.startsWith('192.168.') || /^c0a8:/i.test(mapped)) return false
-      if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(mapped) || /^ac1[0-9a-f]:/i.test(mapped)) return false
-      if (mapped.startsWith('169.254.') || /^a9fe:/i.test(mapped)) return false
-      if (mapped === '0.0.0.0' || mapped === '0' || mapped.startsWith('00')) return false
+      if (mapped.startsWith('127.') || /^7f[0-9a-f]{2}:/i.test(mapped)) return { isSafe: false }
+      if (mapped.startsWith('10.') || /^a[0-9a-f]{2}:/i.test(mapped)) return { isSafe: false }
+      if (mapped.startsWith('192.168.') || /^c0a8:/i.test(mapped)) return { isSafe: false }
+      if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(mapped) || /^ac1[0-9a-f]:/i.test(mapped)) return { isSafe: false }
+      if (mapped.startsWith('169.254.') || /^a9fe:/i.test(mapped)) return { isSafe: false }
+      if (mapped === '0.0.0.0' || mapped === '0' || mapped.startsWith('00')) return { isSafe: false }
     }
 
-    // Block internal domains
-    if (hostname.endsWith('.local') || hostname.endsWith('.internal')) return false
-
-    return true
+    return { isSafe: true }
   } catch {
-    return false // Invalid URL format
+    return { isSafe: false } // Invalid URL format
   }
 }
 
@@ -71,7 +83,8 @@ export async function POST(request: Request) {
     // Fetch loop to follow redirects securely
     for (let i = 0; i <= MAX_REDIRECTS; i++) {
       // SSRF Protection: Validate URL before fetching
-      if (!isUrlSafe(currentUrl)) {
+      const { isSafe } = await isUrlSafe(currentUrl)
+      if (!isSafe) {
         return NextResponse.json({ error: 'Invalid or forbidden URL' }, { status: 400 })
       }
 
