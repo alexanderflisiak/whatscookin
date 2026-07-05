@@ -1,0 +1,3 @@
+## 2026-07-05 - N+1 Query Anti-Pattern in Form Submissions
+**Learning:** Found a severe N+1 query bottleneck over the network when saving forms with related entity lists (e.g., ingredients). The app was previously performing up to 3 separate database calls per ingredient sequentially in a loop, drastically slowing down saves.
+**Action:** When handling related entities in form submissions, batch entity resolutions into three O(1) operations: fetch all existing entities by name using an `.in()` query, bulk insert any missing entities, and finally bulk insert the many-to-many bridge/join table records. Ensure deduplication of names for reads/inserts while retaining the original array for bridge records.
