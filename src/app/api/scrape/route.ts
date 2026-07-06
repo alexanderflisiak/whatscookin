@@ -1,62 +1,115 @@
 import { NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
+import http from 'http'
+import https from 'https'
+import dns from 'dns/promises'
+import net from 'net'
 
-function isUrlSafe(urlString: string): boolean {
-  try {
-    const parsedUrl = new URL(urlString)
+function isIpSafe(ip: string | undefined): boolean {
+  if (!ip) return false
 
-    // Only allow HTTP and HTTPS protocols
-    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
-      return false
-    }
+  // Block localhost and 0.0.0.0
+  if (ip === 'localhost' || ip === '0.0.0.0') return false
 
-    let hostname = parsedUrl.hostname
+  // Block IPv6 localhost and unspecified
+  if (ip === '::1' || ip === '::' || ip === '0:0:0:0:0:0:0:0' || ip === '0:0:0:0:0:0:0:1') return false
 
-    // Strip brackets for IPv6
-    if (hostname.startsWith('[') && hostname.endsWith(']')) {
-      hostname = hostname.slice(1, -1)
-    }
+  // Block private IP ranges (IPv4)
+  // 10.0.0.0 - 10.255.255.255
+  if (ip.startsWith('10.')) return false
+  // 172.16.0.0 - 172.31.255.255
+  if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(ip)) return false
+  // 192.168.0.0 - 192.168.255.255
+  if (ip.startsWith('192.168.')) return false
+  // 127.0.0.0 - 127.255.255.255 (loopback)
+  if (ip.startsWith('127.')) return false
+  // 169.254.0.0 - 169.254.255.255 (link-local)
+  if (ip.startsWith('169.254.')) return false
 
-    // Block localhost and 0.0.0.0
-    if (hostname === 'localhost' || hostname === '0.0.0.0') return false
+  // Block IPv6 Unique Local Addresses (fc00::/7) and Link-Local (fe80::/10)
+  if (/^(fc|fd|fe8|fe9|fea|feb)[0-9a-f]{0,2}:/i.test(ip)) return false
 
-    // Block IPv6 localhost and unspecified
-    if (hostname === '::1' || hostname === '::' || hostname === '0:0:0:0:0:0:0:0' || hostname === '0:0:0:0:0:0:0:1') return false
-
-    // Block private IP ranges (IPv4)
-    // 10.0.0.0 - 10.255.255.255
-    if (hostname.startsWith('10.')) return false
-    // 172.16.0.0 - 172.31.255.255
-    if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)) return false
-    // 192.168.0.0 - 192.168.255.255
-    if (hostname.startsWith('192.168.')) return false
-    // 127.0.0.0 - 127.255.255.255 (loopback)
-    if (hostname.startsWith('127.')) return false
-    // 169.254.0.0 - 169.254.255.255 (link-local)
-    if (hostname.startsWith('169.254.')) return false
-
-    // Block IPv6 Unique Local Addresses (fc00::/7) and Link-Local (fe80::/10)
-    if (/^(fc|fd|fe8|fe9|fea|feb)[0-9a-f]{0,2}:/i.test(hostname)) return false
-
-    // Block IPv4-mapped IPv6 addresses
-    const lowerHost = hostname.toLowerCase()
-    if (lowerHost.startsWith('::ffff:')) {
-      const mapped = lowerHost.slice(7)
-      if (mapped.startsWith('127.') || /^7f[0-9a-f]{2}:/i.test(mapped)) return false
-      if (mapped.startsWith('10.') || /^a[0-9a-f]{2}:/i.test(mapped)) return false
-      if (mapped.startsWith('192.168.') || /^c0a8:/i.test(mapped)) return false
-      if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(mapped) || /^ac1[0-9a-f]:/i.test(mapped)) return false
-      if (mapped.startsWith('169.254.') || /^a9fe:/i.test(mapped)) return false
-      if (mapped === '0.0.0.0' || mapped === '0' || mapped.startsWith('00')) return false
-    }
-
-    // Block internal domains
-    if (hostname.endsWith('.local') || hostname.endsWith('.internal')) return false
-
-    return true
-  } catch {
-    return false // Invalid URL format
+  // Block IPv4-mapped IPv6 addresses
+  const lowerHost = ip.toLowerCase()
+  if (lowerHost.startsWith('::ffff:')) {
+    const mapped = lowerHost.slice(7)
+    if (mapped.startsWith('127.') || /^7f[0-9a-f]{2}:/i.test(mapped)) return false
+    if (mapped.startsWith('10.') || /^a[0-9a-f]{2}:/i.test(mapped)) return false
+    if (mapped.startsWith('192.168.') || /^c0a8:/i.test(mapped)) return false
+    if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(mapped) || /^ac1[0-9a-f]:/i.test(mapped)) return false
+    if (mapped.startsWith('169.254.') || /^a9fe:/i.test(mapped)) return false
+    if (mapped === '0.0.0.0' || mapped === '0' || mapped.startsWith('00')) return false
   }
+
+  return true
+}
+
+// Custom fetch wrapper using native HTTP/HTTPS with DNS rebinding protection
+async function safeFetchWithDnsPinning(urlStr: string) {
+  return new Promise<{ status: number, ok: boolean, html: string, location: string | null }>((resolve, reject) => {
+    let parsed: URL
+    try {
+      parsed = new URL(urlStr)
+    } catch {
+      return reject(new Error('Invalid URL'))
+    }
+
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return reject(new Error('Invalid protocol'))
+    }
+
+    if (parsed.hostname.endsWith('.local') || parsed.hostname.endsWith('.internal')) {
+      return reject(new Error('Internal domain blocked'))
+    }
+
+    const lib = parsed.protocol === 'https:' ? https : http
+
+    const agent = new lib.Agent({
+      // Provide custom DNS lookup to resolve and pin the IP before connection
+      lookup: (hostname, options, callback) => {
+        if (net.isIP(hostname)) {
+          if (!isIpSafe(hostname)) {
+            return callback(new Error('Unsafe IP resolved: ' + hostname), hostname, net.isIPv6(hostname) ? 6 : 4)
+          }
+          return callback(null, hostname, net.isIPv6(hostname) ? 6 : 4)
+        }
+
+        dns.lookup(hostname).then((res) => {
+          if (!isIpSafe(res.address)) {
+            return callback(new Error('Unsafe IP resolved: ' + res.address), res.address, res.family)
+          }
+          callback(null, res.address, res.family)
+        }).catch(err => callback(err, '', 4))
+      }
+    })
+
+    const req = lib.request(parsed, {
+      method: 'GET',
+      agent,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'
+      }
+    }, (res) => {
+      let data = ''
+      res.on('data', chunk => data += chunk)
+      res.on('end', () => {
+        resolve({
+          status: res.statusCode || 500,
+          ok: res.statusCode ? res.statusCode >= 200 && res.statusCode < 300 : false,
+          html: data,
+          location: res.headers.location || null
+        })
+      })
+    })
+
+    req.on('error', reject)
+    // Abort if taking too long to prevent hanging connections
+    req.setTimeout(10000, () => {
+      req.destroy()
+      reject(new Error('Timeout'))
+    })
+    req.end()
+  })
 }
 
 export async function POST(request: Request) {
@@ -65,41 +118,38 @@ export async function POST(request: Request) {
     if (!url) return NextResponse.json({ error: 'URL is required' }, { status: 400 })
 
     let currentUrl = url
-    let response: Response | null = null
+    let responseResult: { status: number, ok: boolean, html: string, location: string | null } | null = null
     const MAX_REDIRECTS = 5
 
     // Fetch loop to follow redirects securely
     for (let i = 0; i <= MAX_REDIRECTS; i++) {
-      // SSRF Protection: Validate URL before fetching
-      if (!isUrlSafe(currentUrl)) {
+      try {
+        responseResult = await safeFetchWithDnsPinning(currentUrl)
+      } catch (err: unknown) {
         return NextResponse.json({ error: 'Invalid or forbidden URL' }, { status: 400 })
       }
 
-      response = await fetch(currentUrl, {
-        redirect: 'manual', // Prevent automatic following to intercept and validate Location
-        headers: {
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-        },
-      })
-
       // If it's a redirect, get the Location header and continue loop
-      if (response.status >= 300 && response.status < 400) {
-        const location = response.headers.get('location')
+      if (responseResult.status >= 300 && responseResult.status < 400) {
+        const location = responseResult.location
         if (!location) break
         // Resolve relative redirects
-        currentUrl = new URL(location, currentUrl).toString()
+        try {
+          currentUrl = new URL(location, currentUrl).toString()
+        } catch {
+          break
+        }
         continue
       }
 
       break // Not a redirect, exit loop
     }
 
-    if (!response || !response.ok) {
+    if (!responseResult || !responseResult.ok) {
       return NextResponse.json({ error: 'Failed to access URL' }, { status: 400 })
     }
 
-    const html = await response.text()
+    const html = responseResult.html
     const $ = cheerio.load(html)
     
     let recipeData: any = null
