@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
+import * as http from 'http'
+import * as https from 'https'
+import * as dns from 'dns'
 
 function isUrlSafe(urlString: string): boolean {
   try {
@@ -59,13 +62,82 @@ function isUrlSafe(urlString: string): boolean {
   }
 }
 
+const lookup = (hostname: string, opts: any, cb: any) => {
+  let callback = cb
+  if (typeof opts === 'function') {
+    callback = opts
+    opts = {}
+  }
+  dns.lookup(hostname, opts, (err, ip, fam) => {
+    if (err) return callback(err, ip, fam)
+
+    if (Array.isArray(ip)) {
+      const safeIps = ip.filter(record => isUrlSafe(`http://${record.address}`))
+      if (safeIps.length === 0) return callback(new Error('Forbidden IP'), ip, fam)
+      return callback(null, safeIps, fam)
+    }
+
+    if (!isUrlSafe(`http://${ip}`)) {
+      return callback(new Error('Forbidden IP'), ip, fam)
+    }
+    callback(null, ip, fam)
+  })
+}
+
+const safeHttpAgent = new http.Agent({ lookup })
+const safeHttpsAgent = new https.Agent({ lookup })
+
+async function safeFetch(urlStr: string, options?: any): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const parsedUrl = new URL(urlStr)
+    const protocol = parsedUrl.protocol === 'https:' ? https : http
+    const agent = parsedUrl.protocol === 'https:' ? safeHttpsAgent : safeHttpAgent
+
+    const reqOptions = {
+      ...options,
+      agent,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+        ...(options?.headers || {})
+      }
+    }
+
+    const req = protocol.request(urlStr, reqOptions, (res) => {
+      res.setEncoding('utf8')
+      let data = ''
+      res.on('data', chunk => data += chunk)
+      res.on('end', () => {
+        const headers = new Headers()
+        for (const [key, value] of Object.entries(res.headers)) {
+            if (Array.isArray(value)) {
+                value.forEach(v => headers.append(key, v))
+            } else if (value) {
+                headers.set(key, value)
+            }
+        }
+
+        resolve({
+          ok: (res.statusCode || 200) >= 200 && (res.statusCode || 200) < 300,
+          status: res.statusCode || 200,
+          headers,
+          text: async () => data
+        })
+      })
+      res.on('error', reject)
+    })
+
+    req.on('error', reject)
+    req.end()
+  })
+}
+
 export async function POST(request: Request) {
   try {
     const { url } = await request.json()
     if (!url) return NextResponse.json({ error: 'URL is required' }, { status: 400 })
 
     let currentUrl = url
-    let response: Response | null = null
+    let response: any = null
     const MAX_REDIRECTS = 5
 
     // Fetch loop to follow redirects securely
@@ -75,12 +147,8 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Invalid or forbidden URL' }, { status: 400 })
       }
 
-      response = await fetch(currentUrl, {
+      response = await safeFetch(currentUrl, {
         redirect: 'manual', // Prevent automatic following to intercept and validate Location
-        headers: {
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-        },
       })
 
       // If it's a redirect, get the Location header and continue loop
